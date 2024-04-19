@@ -46,7 +46,6 @@
   #define KEY_FLIP_VERTICAL true
   #define KEY_ROTATION 0
   #define IMAGE_REPORT_HEADER_LENGTH 8
-  #define IMAGE_REPORT_LENGTH 1024
 
   /* XL
   Key: in,
@@ -87,7 +86,6 @@
 
   #define IMAGE_REPORT_HEADER_LENGTH 8
   #define IMAGE_REPORT_LCD_HEADER_LENGTH 16
-  #define IMAGE_REPORT_LENGTH 1024
 
   /* Plus
   Key: in, 00 ...
@@ -105,6 +103,10 @@
 
 #endif
 
+// Common
+#define OUTPUT_REPORT_LEN 1023
+
+// Default
 #ifndef DIAL_COUNT
   #define DIAL_COUNT 0
 #endif
@@ -122,7 +124,7 @@ HID_COLLECTION ( HID_COLLECTION_APPLICATION ), \
   HID_USAGE_PAGE_N(HID_USAGE_PAGE_VENDOR, 2),  \
   REPORT_FIELD() \
     /* reset, image, etc... */ \
-    HID_REPORT_COUNT_N ( 1023, 2), \
+    HID_REPORT_COUNT_N ( OUTPUT_REPORT_LEN, 2), \
     HID_REPORT_ID    ( 2 ) \
     HID_USAGE ( HID_USAGE_CONSUMER_CONTROL ), \
     HID_OUTPUT       ( OUTPUT_REPORT_FLAGS ) ,\

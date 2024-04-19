@@ -38,7 +38,7 @@ void setup()
     usb_hid.enableOutEndpoint(true);
     usb_hid.setPollInterval(2);
     usb_hid.setReportDescriptor(desc_hid_report, sizeof(desc_hid_report));
-    usb_hid.setReportCallback(get_report_callback, set_report_callback);
+    usb_hid.setReportCallback(get_report_callback, pre_set_report_callback);
     usb_hid.begin();
 
     Serial.begin(115200);
@@ -104,9 +104,7 @@ uint16_t get_report_callback(uint8_t report_id, hid_report_type_t report_type, u
     (void)buffer;
     (void)reqlen;
 
-    char str[80];
-    sprintf(str, "GET Report Type: %d, Report ID: %d", report_type, report_id);
-    Serial.println(str);
+    Serial.printf("GET Report Type: %d, Report ID: %d\n", report_type, report_id);
 
     if (report_type == HID_REPORT_TYPE_FEATURE)
     {
@@ -128,8 +126,12 @@ uint16_t get_report_callback(uint8_t report_id, hid_report_type_t report_type, u
     return 0;
 }
 
+uint8_t output_report_id = 0;
+uint8_t output_report_buffer[OUTPUT_REPORT_LEN];
+uint16_t output_report_written_len = 0;
+
 // Invoked when received SET_REPORT control request or received data on OUT endpoint ( Report ID = 0, Type = 0 )
-void set_report_callback(uint8_t report_id, hid_report_type_t report_type, uint8_t const *buffer, uint16_t bufsize)
+void pre_set_report_callback(uint8_t report_id, hid_report_type_t report_type, uint8_t const *buffer, uint16_t bufsize)
 {
     char str[110];
     sprintf(
@@ -139,31 +141,55 @@ void set_report_callback(uint8_t report_id, hid_report_type_t report_type, uint8
         buffer[0], buffer[1]);
     Serial.println(str);
 
-    // TODO: For over 64 bytes packet, TinyUSB stack will call set_report_callback multiple times.
-    //       So, we should store the report data and process it when complete.
-    if (report_type == HID_REPORT_TYPE_INVALID && report_id == 0)
+    if (report_type == HID_REPORT_TYPE_INVALID && report_id == 0 &&
+        (buffer[0] == 0x02 || output_report_written_len > 0))
     {
-        // LED Color
-        if (buffer[0] == 0x02 && buffer[1] == 0x0b)
+        if (output_report_written_len == 0)
         {
-            sprintf(str, "RGB: %02X%02X%02X", buffer[2], buffer[3], buffer[4]);
-            Serial.println(str);
+            output_report_id = buffer[0];
+            memcpy(output_report_buffer, buffer + 1, bufsize);
+            output_report_written_len = bufsize - 1;
+        } else {
+            memcpy(output_report_buffer + output_report_written_len, buffer, bufsize);
+            output_report_written_len += bufsize;
         }
+
+        if (output_report_written_len < OUTPUT_REPORT_LEN) {
+            // report data is not complete yet
+            return;
+        }
+
+        set_report_callback(output_report_id, HID_REPORT_TYPE_OUTPUT, output_report_buffer, output_report_written_len);
+        output_report_written_len = 0;
+        return;
     }
 
+    // If it processes output report, but, another report type will come.
+    if (output_report_written_len > 0 && report_type != HID_REPORT_TYPE_OUTPUT)
+    {
+        // reset output report buffer
+        output_report_written_len = 0;
+    }
+
+    set_report_callback(report_id, report_type, buffer, bufsize);
+}
+
+void set_report_callback(uint8_t report_id, hid_report_type_t report_type, uint8_t const *buffer, uint16_t bufsize)
+{
     if (report_type == HID_REPORT_TYPE_FEATURE)
     {
         if (report_id == 0x03 && buffer[0] == 0x02)
         {
-            // reset
+            Serial.println("Reset");
         }
         if (report_id == 0x03 && buffer[0] == 0x08)
         {
-            // brightness
+            Serial.println("Brightness");
         }
     }
 
     if (report_type == HID_REPORT_TYPE_OUTPUT)
     {
+        Serial.printf("Output Report: %d, [%02X, %02X]\n", report_id, buffer[0], buffer[1]);
     }
 }
