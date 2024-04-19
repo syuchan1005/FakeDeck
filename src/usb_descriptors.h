@@ -104,6 +104,7 @@
 #endif
 
 // Common
+#define OUTPUT_REPORT_ID  2
 #define OUTPUT_REPORT_LEN 1023
 
 // Default
@@ -125,7 +126,7 @@ HID_COLLECTION ( HID_COLLECTION_APPLICATION ), \
   REPORT_FIELD() \
     /* reset, image, etc... */ \
     HID_REPORT_COUNT_N ( OUTPUT_REPORT_LEN, 2), \
-    HID_REPORT_ID    ( 2 ) \
+    HID_REPORT_ID    ( OUTPUT_REPORT_ID ) \
     HID_USAGE ( HID_USAGE_CONSUMER_CONTROL ), \
     HID_OUTPUT       ( OUTPUT_REPORT_FLAGS ) ,\
     \

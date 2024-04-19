@@ -142,7 +142,7 @@ void pre_set_report_callback(uint8_t report_id, hid_report_type_t report_type, u
     Serial.println(str);
 
     if (report_type == HID_REPORT_TYPE_INVALID && report_id == 0 &&
-        (buffer[0] == 0x02 || output_report_written_len > 0))
+        (buffer[0] == OUTPUT_REPORT_ID || output_report_written_len > 0))
     {
         if (output_report_written_len == 0)
         {
