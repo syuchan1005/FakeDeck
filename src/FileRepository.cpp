@@ -1,20 +1,37 @@
 #include <Arduino.h>
 #include <LittleFS.h>
 
+#ifndef FILE_REPOSITORY_H
+#define FILE_REPOSITORY_H
+
 class FileRepository
 {
 public:
-    void writeKeyImage(uint8_t key_index, uint8_t *buffer, uint16_t buffer_size)
+    void init()
     {
-        (void)buffer;
-        // TODO
-        Serial.printf("Key Image: %d, %d\n", key_index, buffer_size);
+        if (!LittleFS.begin())
+        {
+            LittleFS.format();
+            LittleFS.begin();
+        }
     }
 
-    void writeTouchscreenImage(uint16_t x_pos, uint16_t y_pos, uint16_t width, uint16_t height, uint8_t *buffer, uint16_t buffer_size)
+    bool readFile(const char *filename, uint8_t *buffer, uint16_t buffer_size)
     {
-        (void)buffer;
-        // TODO
-        Serial.printf("Touchscreen Image: %d, %d, %d, %d, %d\n", x_pos, y_pos, width, height, buffer_size);
+        File file = LittleFS.open(filename, "r");
+        if (!file) return false;
+        int read_size = file.read(buffer, buffer_size);
+        file.close();
+        return read_size == buffer_size;
+    }
+
+    void writeFile(const char *filename, uint8_t *buffer, uint16_t buffer_size)
+    {
+        File file = LittleFS.open(filename, "w");
+        if (!file) return;
+        file.write(buffer, buffer_size);
+        file.close();
     }
 };
+
+#endif

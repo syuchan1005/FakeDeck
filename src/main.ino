@@ -3,14 +3,12 @@
 #include <Adafruit_TinyUSB.h>
 #include "./usb_descriptors.h"
 
-#include "./input/buttons.cpp"
-#include "./input/encoder.h"
+#include "./input/LCD.cpp"
 
 #include "./FileRepository.cpp"
 
-// TODO: Supports button array
-Buttons buttons((uint8_t[]){3, 7, 11, 15, 16});
-Encoders encoders((uint8_t[]){17, 18});
+TFT_eSPI LCD::tft = TFT_eSPI();
+LCD lcd;
 
 FileRepository file_repository;
 
@@ -32,9 +30,6 @@ uint8_t serial[20] = {0x0C, 0x00, 0x00, 0x00, 0x00, 0x00, 0x5A, 0x5A, 0x5A, 0x5A
 
 void setup()
 {
-    buttons.init();
-    encoders.init();
-
     TinyUSBDevice.setManufacturerDescriptor(DECK_USB_MANUFACTURER);
     TinyUSBDevice.setProductDescriptor(DECK_USB_PRODUCT);
     TinyUSBDevice.setID(DECK_USB_VID, DECK_USB_PID);
@@ -47,20 +42,29 @@ void setup()
 
     Serial.begin(115200);
 
-    // wait until device mounted
-    while (!TinyUSBDevice.mounted())
-        delay(1);
+    lcd.init();
+    file_repository.init();
+    lcd.calibrate(file_repository);
+
+    Serial.println("Setup");
+
+    delay(1000);
 }
 
+uint8_t report[INPUT_REPORT_LEN] = { 0, KEY_COUNT, 0 };
 void loop()
 {
-    delay(100);
-
-    uint8_t report[INPUT_REPORT_LEN] = {0x00, KEY_COUNT, 0x00}; // key, count, ?
-    buttons.getButtons(report, 3);
+    // uint8_t report[INPUT_REPORT_LEN] = {0x00, KEY_COUNT, 0x00}; // key, count, ?
+    uint8_t pressedKey = lcd.get_pressed_button();
+    if (pressedKey != 0x80)
+    {
+        Serial.printf("Pressed Key: %d\n", pressedKey);
+        report[pressedKey + 3] = 1;
+    }
     usb_hid.sendReport(1, report, sizeof(report));
+    memset(report + 3, 0, KEY_COUNT);
 
-    maybeSendDialReport();
+    // maybeSendDialReport();
 
     /*
     uint8_t touchscreenReport[INPUT_REPORT_LEN] = {
@@ -73,6 +77,7 @@ void loop()
     */
 }
 
+/*
 std::vector<int8_t> dialValues;
 void maybeSendDialReport() {
     bool isDialChanged = false;
@@ -102,6 +107,7 @@ void maybeSendDialReport() {
         Serial.printf("Dial Changed: %d\n", (int8_t) dialReport[4]);
     }
 }
+*/
 
 uint16_t get_report_callback(uint8_t report_id, hid_report_type_t report_type, uint8_t *buffer, uint16_t reqlen)
 {
@@ -198,7 +204,7 @@ void set_report_callback(uint8_t report_id, hid_report_type_t report_type, uint8
 
     if (report_type == HID_REPORT_TYPE_OUTPUT)
     {
-        Serial.printf("Output Report: %d, [%02X, %02X]\n", report_id, buffer[0], buffer[1]);
+        Serial.printf("Output Report: %d, [%02X, %02X, %02X, %02X, %02X, %02X]\n", report_id, buffer[0], buffer[1], buffer[2], buffer[3], buffer[4], buffer[5]);
 
         // reset image buffer when another request comes
         if (report_id == 0x02 && image_buffer_written_len > 0 && buffer[0] != image_type)
@@ -207,24 +213,23 @@ void set_report_callback(uint8_t report_id, hid_report_type_t report_type, uint8
         }
 
         if (report_id == 0x02 && buffer[0] == 0x07) {
-            image_type = buffer[0];
             // key image
+            image_type = buffer[0];
             uint8_t key_index = buffer[1];
             uint8_t is_last = buffer[2];
             uint16_t image_length = buffer[3] | (buffer[4] << 8);
             uint16_t page_number = buffer[5] | (buffer[6] << 8);
 
-            // concat
             memmove(image_buffer + image_buffer_written_len, buffer + 7, image_length);
             image_buffer_written_len += image_length;
 
             if (is_last) {
-                file_repository.writeKeyImage(key_index, image_buffer, image_buffer_written_len);
+                lcd.draw_key_image(file_repository, key_index, image_buffer, image_buffer_written_len);
                 image_buffer_written_len = 0;
             }
         } else if (report_id == 0x02 && buffer[0] == 0x0C) {
-            image_type = buffer[0];
             // touchscreen image
+            image_type = buffer[0];
             uint16_t x_pos = buffer[1] | (buffer[2] << 8);
             uint16_t y_pos = buffer[3] | (buffer[4] << 8);
             uint16_t width = buffer[5] | (buffer[6] << 8);
@@ -234,12 +239,11 @@ void set_report_callback(uint8_t report_id, hid_report_type_t report_type, uint8
             uint16_t image_length = buffer[12] | (buffer[13] << 8);
             // padding = buffer[14]
 
-            // concat
             memmove(image_buffer + image_buffer_written_len, buffer + 15, image_length);
             image_buffer_written_len += image_length;
 
             if (is_last) {
-                file_repository.writeTouchscreenImage(x_pos, y_pos, width, height, image_buffer, image_buffer_written_len);
+                // TODO: draw lcd
                 image_buffer_written_len = 0;
             }
         }
