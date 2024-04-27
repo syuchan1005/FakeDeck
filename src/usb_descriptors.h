@@ -1,10 +1,14 @@
 #include <Adafruit_TinyUSB.h>
 
+#ifndef USB_DESCRIPTORS_H
+#define USB_DESCRIPTORS_H
+
 #define PEDAL 1
 #define XL 2
 #define PLUS 3
+#define ORIGINAL_V2 4
 
-#define STREAM_DECK PLUS
+#define STREAM_DECK ORIGINAL_V2
 
 #define DECK_USB_VID 0x0fd9
 #define DECK_USB_MANUFACTURER "Elgato Systems GmbH"
@@ -39,7 +43,9 @@
   #define DECK_USB_PID 0x006c
   #define DECK_USB_PRODUCT "Stream Deck XL"
 
-  #define KEY_COUNT 32 // col 8 row 4
+  #define KEY_COUNT_COL 8
+  #define KEY_COUNT_ROW 4
+  #define KEY_COUNT KEY_COUNT_COL * KEY_COUNT_ROW
 
   #define DECK_LED false
 
@@ -71,7 +77,9 @@
   #define DECK_USB_PID 0x0084
   #define DECK_USB_PRODUCT "Stream Deck +"
 
-  #define KEY_COUNT 8 // col 4 row 2
+  #define KEY_COUNT_COL 4
+  #define KEY_COUNT_ROW 2
+  #define KEY_COUNT KEY_COUNT_COL * KEY_COUNT_ROW
   #define DIAL_COUNT 4
 
   #define DECK_LED false
@@ -108,6 +116,40 @@
   touchscreen_image: out, 02, 0c ...
   */
   #define INPUT_REPORT_LEN 14
+
+#elif STREAM_DECK == ORIGINAL_V2
+
+  #define DECK_USB_PID 0x006d
+  #define DECK_USB_PRODUCT "Stream Deck V2"
+
+  #define KEY_COUNT_COL 5
+  #define KEY_COUNT_ROW 3
+  #define KEY_COUNT KEY_COUNT_COL * KEY_COUNT_ROW
+
+  #define DECK_LED false
+
+  #define DECK_VISUAL true
+  #define KEY_PIXEL_WIDTH 72
+  #define KEY_PIXEL_HEIGHT 72
+  #define KEY_IMAGE_FORMAT "JPEG"
+  #define KEY_FLIP_HORIZONTAL true
+  #define KEY_FLIP_VERTICAL true
+  #define KEY_ROTATION 0
+  #define IMAGE_REPORT_HEADER_LENGTH 8
+
+  #define TOUCHSCREEN_PIXEL_HEIGHT 0
+  #define TOUCHSCREEN_PIXEL_WIDTH 0
+
+  /* Original v2
+  Key: in,
+  reset_key: out, 02, 00 ...
+  reset: feature, 03, 02
+  brightness: feature, 03, 08, VALUE
+  serial: feature, 06
+  version: faeture, 05
+  key_image: out, 02, 07, KEY, IS_LAST, IMAGE_LEN_LOW, IMAGE_LEN_HIGH, ...
+  */
+  #define INPUT_REPORT_LEN KEY_COUNT + 4
 
 #endif
 
@@ -171,3 +213,5 @@ HID_COLLECTION ( HID_COLLECTION_APPLICATION ), \
     HID_USAGE ( HID_USAGE_CONSUMER_CONTROL ), \
     HID_FEATURE      ( FEATURE_REPORT_FLAGS ), \
 HID_COLLECTION_END
+
+#endif
