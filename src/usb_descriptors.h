@@ -20,6 +20,11 @@
 
   #define DECK_VISUAL false
 
+  #define KEY_PIXEL_WIDTH 0
+  #define KEY_PIXEL_HEIGHT 0
+  #define TOUCHSCREEN_PIXEL_HEIGHT 0
+  #define TOUCHSCREEN_PIXEL_WIDTH 0
+
   // report_type, report_id, content
   /* Pedal
   Key: in, {00, 03, 00, ...keys, 00}
@@ -46,6 +51,9 @@
   #define KEY_FLIP_VERTICAL true
   #define KEY_ROTATION 0
   #define IMAGE_REPORT_HEADER_LENGTH 8
+
+  #define TOUCHSCREEN_PIXEL_HEIGHT 0
+  #define TOUCHSCREEN_PIXEL_WIDTH 0
 
   /* XL
   Key: in,
@@ -106,6 +114,14 @@
 // Common
 #define OUTPUT_REPORT_ID  2
 #define OUTPUT_REPORT_LEN 1023
+
+#define KEY_IMAGE_SIZE_BYTES (KEY_PIXEL_WIDTH * KEY_PIXEL_HEIGHT * 3)
+#define TOUCHSCREEN_SIZE_BYTES (TOUCHSCREEN_PIXEL_WIDTH * TOUCHSCREEN_PIXEL_HEIGHT * 3)
+#if KEY_IMAGE_SIZE_BYTES > TOUCHSCREEN_SIZE_BYTES
+  #define MAX_IMAGE_SIZE_BYTES KEY_IMAGE_SIZE_BYTES
+#else
+  #define MAX_IMAGE_SIZE_BYTES TOUCHSCREEN_SIZE_BYTES
+#endif
 
 // Default
 #ifndef DIAL_COUNT

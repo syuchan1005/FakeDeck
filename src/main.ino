@@ -6,9 +6,13 @@
 #include "./input/buttons.cpp"
 #include "./input/encoder.h"
 
+#include "./FileRepository.cpp"
+
 // TODO: Supports button array
 Buttons buttons((uint8_t[]){3, 7, 11, 15, 16});
 Encoders encoders((uint8_t[]){17, 18});
+
+FileRepository file_repository;
 
 uint8_t const desc_hid_report[] = {TUD_HID_REPORT_DESC()};
 
@@ -112,13 +116,13 @@ uint16_t get_report_callback(uint8_t report_id, hid_report_type_t report_type, u
         if (report_id == 0x05)
         {
             // version
-            memcpy(buffer, version, reqlen);
+            memmove(buffer, version, reqlen);
             return sizeof(buffer) * 8 - 1;
         }
         if (report_id == 0x06)
         {
             // serial
-            memcpy(buffer, serial, reqlen);
+            memmove(buffer, serial, reqlen);
             return sizeof(buffer) * 8 - 1;
         }
     }
@@ -136,8 +140,8 @@ void pre_set_report_callback(uint8_t report_id, hid_report_type_t report_type, u
     char str[110];
     sprintf(
         str,
-        "SET Report Type: %d, Report ID: %d, len: %d, buf: [%02X, %02X, ...]",
-        report_type, report_id, bufsize,
+        "SET Report Type: %d, Report ID: %d, len: %d, outputlen: %d, buf: [%02X, %02X, ...]",
+        report_type, report_id, bufsize, output_report_written_len,
         buffer[0], buffer[1]);
     Serial.println(str);
 
@@ -147,10 +151,10 @@ void pre_set_report_callback(uint8_t report_id, hid_report_type_t report_type, u
         if (output_report_written_len == 0)
         {
             output_report_id = buffer[0];
-            memcpy(output_report_buffer, buffer + 1, bufsize);
+            memmove(output_report_buffer, buffer + 1, bufsize - 1);
             output_report_written_len = bufsize - 1;
         } else {
-            memcpy(output_report_buffer + output_report_written_len, buffer, bufsize);
+            memmove(output_report_buffer + output_report_written_len, buffer, bufsize);
             output_report_written_len += bufsize;
         }
 
@@ -174,6 +178,10 @@ void pre_set_report_callback(uint8_t report_id, hid_report_type_t report_type, u
     set_report_callback(report_id, report_type, buffer, bufsize);
 }
 
+uint8_t image_type = 0; // 0x07: key, 0x0C: touchscreen
+uint8_t image_buffer[MAX_IMAGE_SIZE_BYTES];
+uint16_t image_buffer_written_len = 0;
+
 void set_report_callback(uint8_t report_id, hid_report_type_t report_type, uint8_t const *buffer, uint16_t bufsize)
 {
     if (report_type == HID_REPORT_TYPE_FEATURE)
@@ -191,5 +199,49 @@ void set_report_callback(uint8_t report_id, hid_report_type_t report_type, uint8
     if (report_type == HID_REPORT_TYPE_OUTPUT)
     {
         Serial.printf("Output Report: %d, [%02X, %02X]\n", report_id, buffer[0], buffer[1]);
+
+        // reset image buffer when another request comes
+        if (report_id == 0x02 && image_buffer_written_len > 0 && buffer[0] != image_type)
+        {
+            image_buffer_written_len = 0;
+        }
+
+        if (report_id == 0x02 && buffer[0] == 0x07) {
+            image_type = buffer[0];
+            // key image
+            uint8_t key_index = buffer[1];
+            uint8_t is_last = buffer[2];
+            uint16_t image_length = buffer[3] | (buffer[4] << 8);
+            uint16_t page_number = buffer[5] | (buffer[6] << 8);
+
+            // concat
+            memmove(image_buffer + image_buffer_written_len, buffer + 7, image_length);
+            image_buffer_written_len += image_length;
+
+            if (is_last) {
+                file_repository.writeKeyImage(key_index, image_buffer, image_buffer_written_len);
+                image_buffer_written_len = 0;
+            }
+        } else if (report_id == 0x02 && buffer[0] == 0x0C) {
+            image_type = buffer[0];
+            // touchscreen image
+            uint16_t x_pos = buffer[1] | (buffer[2] << 8);
+            uint16_t y_pos = buffer[3] | (buffer[4] << 8);
+            uint16_t width = buffer[5] | (buffer[6] << 8);
+            uint16_t height = buffer[7] | (buffer[8] << 8);
+            uint8_t is_last = buffer[9];
+            uint16_t page_number = buffer[10] | (buffer[11] << 8);
+            uint16_t image_length = buffer[12] | (buffer[13] << 8);
+            // padding = buffer[14]
+
+            // concat
+            memmove(image_buffer + image_buffer_written_len, buffer + 15, image_length);
+            image_buffer_written_len += image_length;
+
+            if (is_last) {
+                file_repository.writeTouchscreenImage(x_pos, y_pos, width, height, image_buffer, image_buffer_written_len);
+                image_buffer_written_len = 0;
+            }
+        }
     }
 }
