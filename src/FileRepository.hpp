@@ -1,8 +1,8 @@
+#ifndef FILE_REPOSITORY_HPP
+#define FILE_REPOSITORY_HPP
+
 #include <Arduino.h>
 #include <LittleFS.h>
-
-#ifndef FILE_REPOSITORY_H
-#define FILE_REPOSITORY_H
 
 class FileRepository
 {
@@ -34,4 +34,4 @@ public:
     }
 };
 
-#endif
+#endif // FILE_REPOSITORY_HPP

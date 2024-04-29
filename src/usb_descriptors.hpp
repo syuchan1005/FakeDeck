@@ -1,67 +1,27 @@
+#ifndef USB_DESCRIPTORS_HPP
+#define USB_DESCRIPTORS_HPP
+
 #include <Adafruit_TinyUSB.h>
 
-#ifndef USB_DESCRIPTORS_H
-#define USB_DESCRIPTORS_H
-
-#define PEDAL 1
-#define XL 2
-#define PLUS 3
-#define ORIGINAL_V2 4
+#define ORIGINAL_V2 1
+#define PLUS 2
 
 #define STREAM_DECK ORIGINAL_V2
 
 #define DECK_USB_VID 0x0fd9
 #define DECK_USB_MANUFACTURER "Elgato Systems GmbH"
 
-#if STREAM_DECK == PEDAL
+#if STREAM_DECK == ORIGINAL_V2
 
-  #define DECK_USB_PID 0x0086
-  #define DECK_USB_PRODUCT "Stream Deck Pedal"
+  #define DECK_USB_PID 0x006d
+  #define DECK_USB_PRODUCT "Stream Deck V2"
 
-  #define KEY_COUNT 3
+  #define KEY_COUNT_COL 5
+  #define KEY_COUNT_ROW 3
+  #define KEY_PIXEL_WIDTH 72
+  #define KEY_PIXEL_HEIGHT 72
 
-  #define DECK_LED true
-
-  #define DECK_VISUAL false
-
-  #define KEY_PIXEL_WIDTH 0
-  #define KEY_PIXEL_HEIGHT 0
-  #define TOUCHSCREEN_PIXEL_HEIGHT 0
-  #define TOUCHSCREEN_PIXEL_WIDTH 0
-
-  // report_type, report_id, content
-  /* Pedal
-  Key: in, {00, 03, 00, ...keys, 00}
-  Set LED: invalid, 0, {02, 0b, R, G, B}
-  Serial: feature, 06
-  Version: feature, 05
-  */
-  #define INPUT_REPORT_LEN KEY_COUNT + 4
-
-#elif STREAM_DECK == XL
-
-  #define DECK_USB_PID 0x006c
-  #define DECK_USB_PRODUCT "Stream Deck XL"
-
-  #define KEY_COUNT_COL 8
-  #define KEY_COUNT_ROW 4
-  #define KEY_COUNT KEY_COUNT_COL * KEY_COUNT_ROW
-
-  #define DECK_LED false
-
-  #define DECK_VISUAL true
-  #define KEY_PIXEL_WIDTH 96
-  #define KEY_PIXEL_HEIGHT 96
-  #define KEY_IMAGE_FORMAT "JPEG"
-  #define KEY_FLIP_HORIZONTAL true
-  #define KEY_FLIP_VERTICAL true
-  #define KEY_ROTATION 0
-  #define IMAGE_REPORT_HEADER_LENGTH 8
-
-  #define TOUCHSCREEN_PIXEL_HEIGHT 0
-  #define TOUCHSCREEN_PIXEL_WIDTH 0
-
-  /* XL
+  /* Original v2
   Key: in,
   reset_key: out, 02, 00 ...
   reset: feature, 03, 02
@@ -71,7 +31,6 @@
   key_image: out, 02, 07, KEY, IS_LAST, IMAGE_LEN_LOW, IMAGE_LEN_HIGH, ...
   */
   #define INPUT_REPORT_LEN KEY_COUNT + 4
-
 #elif STREAM_DECK == PLUS
 
   #define DECK_USB_PID 0x0084
@@ -79,29 +38,14 @@
 
   #define KEY_COUNT_COL 4
   #define KEY_COUNT_ROW 2
-  #define KEY_COUNT KEY_COUNT_COL * KEY_COUNT_ROW
-  #define DIAL_COUNT 4
-
-  #define DECK_LED false
-
-  #define DECK_VISUAL true
   #define KEY_PIXEL_WIDTH 120
   #define KEY_PIXEL_HEIGHT 120
-  #define KEY_IMAGE_FORMAT "JPEG"
-  #define KEY_FLIP_HORIZONTAL false
-  #define KEY_FLIP_VERTICAL false
-  #define KEY_ROTATION 0
 
-  #define DECK_TOUCH true
-  #define TOUCHSCREEN_PIXEL_HEIGHT 100
+  #define DIAL_COUNT 4
+
+  #define DECK_TOUCH
   #define TOUCHSCREEN_PIXEL_WIDTH 800
-  #define TOUCHSCREEN_IMAGE_FORMAT "JPEG"
-  #define TOUCHSCREEN_FLIP_HORIZONTAL false
-  #define TOUCHSCREEN_FLIP_VERTICAL false
-  #define TOUCHSCREEN_ROTATION 0
-
-  #define IMAGE_REPORT_HEADER_LENGTH 8
-  #define IMAGE_REPORT_LCD_HEADER_LENGTH 16
+  #define TOUCHSCREEN_PIXEL_HEIGHT 100
 
   /* Plus
   Key: in, 00 ...
@@ -117,40 +61,6 @@
   */
   #define INPUT_REPORT_LEN 14
 
-#elif STREAM_DECK == ORIGINAL_V2
-
-  #define DECK_USB_PID 0x006d
-  #define DECK_USB_PRODUCT "Stream Deck V2"
-
-  #define KEY_COUNT_COL 5
-  #define KEY_COUNT_ROW 3
-  #define KEY_COUNT KEY_COUNT_COL * KEY_COUNT_ROW
-
-  #define DECK_LED false
-
-  #define DECK_VISUAL true
-  #define KEY_PIXEL_WIDTH 72
-  #define KEY_PIXEL_HEIGHT 72
-  #define KEY_IMAGE_FORMAT "JPEG"
-  #define KEY_FLIP_HORIZONTAL true
-  #define KEY_FLIP_VERTICAL true
-  #define KEY_ROTATION 0
-  #define IMAGE_REPORT_HEADER_LENGTH 8
-
-  #define TOUCHSCREEN_PIXEL_HEIGHT 0
-  #define TOUCHSCREEN_PIXEL_WIDTH 0
-
-  /* Original v2
-  Key: in,
-  reset_key: out, 02, 00 ...
-  reset: feature, 03, 02
-  brightness: feature, 03, 08, VALUE
-  serial: feature, 06
-  version: faeture, 05
-  key_image: out, 02, 07, KEY, IS_LAST, IMAGE_LEN_LOW, IMAGE_LEN_HIGH, ...
-  */
-  #define INPUT_REPORT_LEN KEY_COUNT + 4
-
 #endif
 
 // Common
@@ -163,6 +73,20 @@
   #define MAX_IMAGE_SIZE_BYTES KEY_IMAGE_SIZE_BYTES
 #else
   #define MAX_IMAGE_SIZE_BYTES TOUCHSCREEN_SIZE_BYTES
+#endif
+
+#define KEY_COUNT KEY_COUNT_COL * KEY_COUNT_ROW
+
+#if STREAM_DECK == PEDAL || STREAM_DECK == XL
+// 2.0.2.8
+uint8_t version[15] = {0x0C, 0xD9, 0x4B, 0x72, 0xE0, 0x32, 0x2E, 0x30, 0x2E, 0x32, 0x2E, 0x38, 0x00, 0x00, 0x00};
+// ZZZZZZZZZZZZZ
+uint8_t serial[15] = {0x0C, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A, 0x00, 0x00};
+#else
+// 6.2.0.18816
+uint8_t version[20] = {0x0C, 0xD9, 0x4B, 0x72, 0xE0, 0x36, 0x2E, 0x32, 0x2E, 0x30, 0x2E, 0x31, 0x38, 0x38, 0x31, 0x36, 0x00, 0x00, 0x00};
+// ZZZZZZZZZZZZZ
+uint8_t serial[20] = {0x0C, 0x00, 0x00, 0x00, 0x00, 0x00, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A, 0x00, 0x00};
 #endif
 
 // Default
@@ -188,13 +112,12 @@ HID_COLLECTION ( HID_COLLECTION_APPLICATION ), \
     HID_USAGE ( HID_USAGE_CONSUMER_CONTROL ), \
     HID_OUTPUT       ( OUTPUT_REPORT_FLAGS ) ,\
     \
-    /* keys, touchscreen */ \
+    /* keys, touchscreen, dials */ \
     HID_REPORT_COUNT ( INPUT_REPORT_LEN ), \
     HID_REPORT_ID    ( 0x01 ) \
     HID_USAGE ( HID_USAGE_CONSUMER_CONTROL ), \
     HID_INPUT        ( INPUT_REPORT_FLAGS ), \
     \
-    /* TODO: dials */ \
     /* reset */ \
     HID_REPORT_COUNT ( 31 ), \
     HID_REPORT_ID    (0x03) \
@@ -214,4 +137,4 @@ HID_COLLECTION ( HID_COLLECTION_APPLICATION ), \
     HID_FEATURE      ( FEATURE_REPORT_FLAGS ), \
 HID_COLLECTION_END
 
-#endif
+#endif // USB_DESCRIPTORS_HPP

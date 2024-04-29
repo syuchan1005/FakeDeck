@@ -1,18 +1,16 @@
-#ifndef LCD_H
-#define LCD_H
+#ifndef LCD_HPP
+#define LCD_HPP
 
 #include <memory>
-
 #include <TFT_eSPI.h>
 #include <TJpg_Decoder.h>
 #include <XPT2046_Touchscreen.h>
-
-#include "../usb_descriptors.h"
-#include "../FileRepository.cpp"
+#include "../usb_descriptors.hpp"
+#include "../FileRepository.hpp"
 
 #define CALIBRATION_FILE "/lcd_calibration.dat"
 
-namespace Display
+namespace Input
 {
     TFT_eSPI tft;
 
@@ -200,4 +198,4 @@ namespace Display
     };
 }
 
-#endif // LCD_H
+#endif // LCD_HPP
