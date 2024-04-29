@@ -3,12 +3,11 @@
 #include <Adafruit_TinyUSB.h>
 #include "./usb_descriptors.h"
 
-#include "./input/LCD.cpp"
+#include "./input/LCD.hpp"
 
 #include "./FileRepository.cpp"
 
-TFT_eSPI LCD::tft = TFT_eSPI();
-LCD lcd;
+Display::LCD lcd;
 
 FileRepository file_repository;
 
@@ -54,7 +53,7 @@ void setup()
 uint8_t report[INPUT_REPORT_LEN] = { 0, KEY_COUNT, 0 };
 void loop()
 {
-    // uint8_t report[INPUT_REPORT_LEN] = {0x00, KEY_COUNT, 0x00}; // key, count, ?
+    delay(100);
     uint8_t pressedKey = lcd.get_pressed_button();
     if (pressedKey != 0x80)
     {
