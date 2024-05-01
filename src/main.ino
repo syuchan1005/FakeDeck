@@ -29,7 +29,7 @@ void setup()
 
     Serial.println("Setup");
     pinMode(TFT_LED, OUTPUT);
-    digitalWrite(TFT_LED, HIGH);
+    analogWrite(TFT_LED, 0xFF);
 
     delay(1000);
 }
@@ -179,7 +179,7 @@ void set_report_callback(uint8_t report_id, hid_report_type_t report_type, uint8
             Serial.println("Reset");
         } else if (report_id == 0x03 && buffer[0] == 0x08)
         {
-            Serial.println("Brightness");
+            analogWrite(TFT_LED, map(buffer[1], 0, 100, 0, 0xFF));
         }
     }
 
