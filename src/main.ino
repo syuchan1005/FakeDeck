@@ -35,16 +35,27 @@ void setup()
 }
 
 uint8_t report[INPUT_REPORT_LEN] = { 0, KEY_COUNT, 0 };
+uint8_t prevPressedKey = 0x80;
 void loop()
 {
     delay(100);
     uint8_t pressedKey = lcd.get_pressed_button();
-    if (pressedKey != 0x80)
+    bool shouldSendPressedReport = false;
+    if (pressedKey != 0x80 && pressedKey != prevPressedKey)
     {
         Serial.printf("Pressed Key: %d\n", pressedKey);
         report[pressedKey + 3] = 1;
+        shouldSendPressedReport = true;
+    } else if (pressedKey == 0x80 && prevPressedKey != 0x80)
+    {
+        Serial.printf("Released Key: %d\n", prevPressedKey);
+        shouldSendPressedReport = true;
     }
-    usb_hid.sendReport(1, report, sizeof(report));
+    prevPressedKey = pressedKey;
+    if (shouldSendPressedReport)
+    {
+        usb_hid.sendReport(1, report, sizeof(report));
+    }
     memset(report + 3, 0, KEY_COUNT);
 
     // maybeSendDialReport();
