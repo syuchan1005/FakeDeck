@@ -22,6 +22,10 @@ Using raspberry pi pico as a stream deck
 ![wire](./assets/wire.jpg)
 ![wire example](./assets/wire_example.jpg)
 
+### Tips
+- [HID Explorer](https://nondebug.github.io/webhid-explorer/) is an easy HID testing tool using WebHID
+- Reset device and enter bootsel mode: Send [02, FF] to the output report
+
 
 ## TODO
 - Make USB and LCD buffer

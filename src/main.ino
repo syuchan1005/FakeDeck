@@ -107,8 +107,7 @@ uint16_t get_report_callback(uint8_t report_id, hid_report_type_t report_type, u
             // version
             memmove(buffer, version, reqlen);
             return sizeof(buffer) * 8 - 1;
-        }
-        if (report_id == 0x06)
+        } else if (report_id == 0x06)
         {
             // serial
             memmove(buffer, serial, reqlen);
@@ -178,8 +177,7 @@ void set_report_callback(uint8_t report_id, hid_report_type_t report_type, uint8
         if (report_id == 0x03 && buffer[0] == 0x02)
         {
             Serial.println("Reset");
-        }
-        if (report_id == 0x03 && buffer[0] == 0x08)
+        } else if (report_id == 0x03 && buffer[0] == 0x08)
         {
             Serial.println("Brightness");
         }
@@ -229,6 +227,9 @@ void set_report_callback(uint8_t report_id, hid_report_type_t report_type, uint8
                 // TODO: draw lcd
                 image_buffer_written_len = 0;
             }
+        } else if (report_id == 0x02 && buffer[0] == 0xFF)
+        {
+            rp2040.rebootToBootloader();
         }
     }
 }
