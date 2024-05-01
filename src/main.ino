@@ -28,6 +28,8 @@ void setup()
     lcd.calibrate(file_repository);
 
     Serial.println("Setup");
+    pinMode(TFT_LED, OUTPUT);
+    digitalWrite(TFT_LED, HIGH);
 
     delay(1000);
 }
