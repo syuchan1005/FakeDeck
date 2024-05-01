@@ -230,6 +230,9 @@ void set_report_callback(uint8_t report_id, hid_report_type_t report_type, uint8
         } else if (report_id == 0x02 && buffer[0] == 0xFF)
         {
             rp2040.rebootToBootloader();
+        } else if (report_id == 0x02 && buffer[0] == 0xFE)
+        {
+            rp2040.reboot();
         }
     }
 }
