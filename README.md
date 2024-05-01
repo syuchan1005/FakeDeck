@@ -1,12 +1,29 @@
 # Fakedeck
 Using raspberry pi pico as a stream deck
 
-[![Twitter](https://pbs.twimg.com/ext_tw_video_thumb/1784246135428890624/pu/img/eGs4Agx_6Pd4zxNw.jpg)](https://twitter.com/i/status/1784246170803634638)
+![](./assets/example.jpg)
+
 
 ## Avaiable devices - Can be modified from usb_descriptors.hpp
 - Stream deck v2
-- Stream deck Plus
+- WIP: Stream deck Plus
+
+## How to create
+### Parts
+- Raspberry Pi Pico
+- ILI9488 TFT with Touch: [AliExpress](https://www.aliexpress.com/item/32985467436.html)
+  > [!IMPORTANT]
+  > Make sure to select "touch screen"
+- Solder, wire, etc.
+- 3D printers for creating a case - [Top](./assets/Case%20-%20Top.stl), [Bottom](./assets/Case%20-%20Bottom.stl)
+- M3 x 16mm screw *4
+
+### Wire
+![wire](./assets/wire.jpg)
+![wire example](./assets/wire_example.jpg)
+
 
 ## TODO
 - Make USB and LCD buffer
 - Support touchscreen and dial report
+- Add BOOTSEL & RUN bottom hole
