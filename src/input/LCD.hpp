@@ -138,10 +138,10 @@ namespace Input
         void draw_key_image(FileRepository &file_repository, uint8_t key_index, uint8_t *buffer, uint16_t buffer_size)
         {
             uint8_t lcd_key_index = KEY_COUNT - key_index - 1;
-            int16_t x_spacing = (tft.width() - KEY_PIXEL_WIDTH * KEY_COUNT_COL) / (KEY_COUNT_COL + 1);
-            int16_t x = x_spacing + (KEY_PIXEL_WIDTH + x_spacing) * (lcd_key_index % KEY_COUNT_COL);
-            int16_t y_spacing = (tft.height() - KEY_PIXEL_HEIGHT * KEY_COUNT_ROW) / (KEY_COUNT_ROW + 1);
-            int16_t y = y_spacing + (KEY_PIXEL_HEIGHT + y_spacing) * (lcd_key_index / KEY_COUNT_COL);
+            int16_t x_spacing = (tft.width() - KEY_IMAGE_SIZE * KEY_COUNT_COL) / (KEY_COUNT_COL + 1);
+            int16_t x = x_spacing + (KEY_IMAGE_SIZE + x_spacing) * (lcd_key_index % KEY_COUNT_COL);
+            int16_t y_spacing = (tft.height() - KEY_IMAGE_SIZE * KEY_COUNT_ROW) / (KEY_COUNT_ROW + 1);
+            int16_t y = y_spacing + (KEY_IMAGE_SIZE + y_spacing) * (lcd_key_index / KEY_COUNT_COL);
             TJpgDec.drawJpg(x, y, buffer, buffer_size);
         }
 
@@ -165,14 +165,14 @@ namespace Input
                 tft.drawPixel(x, y, TFT_RED);
 #endif
 
-                int16_t x_spacing = (tft.width() - KEY_PIXEL_WIDTH * KEY_COUNT_COL) / (KEY_COUNT_COL + 1);
-                int16_t y_spacing = (tft.height() - KEY_PIXEL_HEIGHT * KEY_COUNT_ROW) / (KEY_COUNT_ROW + 1);
+                int16_t x_spacing = (tft.width() - KEY_IMAGE_SIZE * KEY_COUNT_COL) / (KEY_COUNT_COL + 1);
+                int16_t y_spacing = (tft.height() - KEY_IMAGE_SIZE * KEY_COUNT_ROW) / (KEY_COUNT_ROW + 1);
                 for (uint8_t i = 0; i < KEY_COUNT; i++)
                 {
-                    int16_t x_start = x_spacing + (KEY_PIXEL_WIDTH + x_spacing) * (i % KEY_COUNT_COL);
-                    int16_t x_end = x_start + KEY_PIXEL_WIDTH;
-                    int16_t y_start = y_spacing + (KEY_PIXEL_HEIGHT + y_spacing) * (i / KEY_COUNT_COL);
-                    int16_t y_end = y_start + KEY_PIXEL_HEIGHT;
+                    int16_t x_start = x_spacing + (KEY_IMAGE_SIZE + x_spacing) * (i % KEY_COUNT_COL);
+                    int16_t x_end = x_start + KEY_IMAGE_SIZE;
+                    int16_t y_start = y_spacing + (KEY_IMAGE_SIZE + y_spacing) * (i / KEY_COUNT_COL);
+                    int16_t y_end = y_start + KEY_IMAGE_SIZE;
                     if (x >= x_start && x < x_end && y >= y_start && y < y_end)
                     {
                         return KEY_COUNT - i - 1;

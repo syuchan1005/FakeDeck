@@ -14,12 +14,14 @@
 #if STREAM_DECK == ORIGINAL_V2
 
   #define DECK_USB_PID 0x006d
-  #define DECK_USB_PRODUCT "Stream Deck V2"
+  #define DECK_USB_PRODUCT "Streamdeck"
 
   #define KEY_COUNT_COL 5
   #define KEY_COUNT_ROW 3
-  #define KEY_PIXEL_WIDTH 72
-  #define KEY_PIXEL_HEIGHT 72
+  #define KEY_IMAGE_SIZE 72
+
+  #define TOUCHSCREEN_PIXEL_WIDTH 0
+  #define TOUCHSCREEN_PIXEL_HEIGHT 0
 
   /* Original v2
   Key: in,
@@ -34,12 +36,11 @@
 #elif STREAM_DECK == PLUS
 
   #define DECK_USB_PID 0x0084
-  #define DECK_USB_PRODUCT "Stream Deck +"
+  #define DECK_USB_PRODUCT "Streamdeck +"
 
   #define KEY_COUNT_COL 4
   #define KEY_COUNT_ROW 2
-  #define KEY_PIXEL_WIDTH 120
-  #define KEY_PIXEL_HEIGHT 120
+  #define KEY_IMAGE_SIZE 120
 
   #define DIAL_COUNT 4
 
@@ -67,7 +68,7 @@
 #define OUTPUT_REPORT_ID  2
 #define OUTPUT_REPORT_LEN 1023
 
-#define KEY_IMAGE_SIZE_BYTES (KEY_PIXEL_WIDTH * KEY_PIXEL_HEIGHT * 3)
+#define KEY_IMAGE_SIZE_BYTES (KEY_IMAGE_SIZE * KEY_IMAGE_SIZE * 3)
 #define TOUCHSCREEN_SIZE_BYTES (TOUCHSCREEN_PIXEL_WIDTH * TOUCHSCREEN_PIXEL_HEIGHT * 3)
 #if KEY_IMAGE_SIZE_BYTES > TOUCHSCREEN_SIZE_BYTES
   #define MAX_IMAGE_SIZE_BYTES KEY_IMAGE_SIZE_BYTES
@@ -77,17 +78,10 @@
 
 #define KEY_COUNT KEY_COUNT_COL * KEY_COUNT_ROW
 
-#if STREAM_DECK == PEDAL || STREAM_DECK == XL
-// 2.0.2.8
-uint8_t version[15] = {0x0C, 0xD9, 0x4B, 0x72, 0xE0, 0x32, 0x2E, 0x30, 0x2E, 0x32, 0x2E, 0x38, 0x00, 0x00, 0x00};
-// ZZZZZZZZZZZZZ
-uint8_t serial[15] = {0x0C, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A, 0x00, 0x00};
-#else
 // 6.2.0.18816
 uint8_t version[20] = {0x0C, 0xD9, 0x4B, 0x72, 0xE0, 0x36, 0x2E, 0x32, 0x2E, 0x30, 0x2E, 0x31, 0x38, 0x38, 0x31, 0x36, 0x00, 0x00, 0x00};
 // ZZZZZZZZZZZZZ
 uint8_t serial[20] = {0x0C, 0x00, 0x00, 0x00, 0x00, 0x00, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A, 0x00, 0x00};
-#endif
 
 // Default
 #ifndef DIAL_COUNT
