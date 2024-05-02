@@ -1,4 +1,3 @@
-#include <Arduino.h>
 #include <Adafruit_TinyUSB.h>
 #include "./usb_descriptors.hpp"
 #include "./input/LCD.hpp"
@@ -11,6 +10,8 @@ uint8_t const desc_hid_report[] = {TUD_HID_REPORT_DESC()};
 
 void setup()
 {
+    Serial.begin(115200);
+
     TinyUSBDevice.setManufacturerDescriptor(DECK_USB_MANUFACTURER);
     TinyUSBDevice.setProductDescriptor(DECK_USB_PRODUCT);
     TinyUSBDevice.setID(DECK_USB_VID, DECK_USB_PID);
@@ -21,17 +22,13 @@ void setup()
     usb_hid.setReportCallback(get_report_callback, pre_set_report_callback);
     usb_hid.begin();
 
-    Serial.begin(115200);
-
     lcd.init();
     file_repository.init();
     lcd.calibrate(file_repository);
 
-    Serial.println("Setup");
+    //Serial.println("Setup");
     pinMode(TFT_LED, OUTPUT);
     analogWrite(TFT_LED, 0xFF);
-
-    delay(1000);
 }
 
 uint8_t report[INPUT_REPORT_LEN] = { 0, KEY_COUNT, 0 };
