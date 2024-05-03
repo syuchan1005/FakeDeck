@@ -4,7 +4,7 @@ Using raspberry pi pico as a stream deck
 ![](./assets/example.jpg)
 
 
-## Avaiable devices - Can be modified from usb_descriptors.hpp
+## Avaiable devices - Can be modified from [src/deck_config.hpp](src/deck_config.hpp)
 - Stream deck v2
 - WIP: Stream deck Plus
 
