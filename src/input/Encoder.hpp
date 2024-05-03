@@ -71,7 +71,7 @@ namespace Input
     class Encoders
     {
     public:
-        Encoders(uint8_t *encoderPins)
+        Encoders(uint8_t *encoderPins, uint8_t maxEncoderCount)
         {
             uint8_t rawCount = sizeof(encoderPins) / sizeof(uint8_t);
             uint8_t encoderCount = rawCount / 2;
@@ -81,7 +81,7 @@ namespace Input
             {
                 encoders[i] = std::make_unique<Encoder>(encoderPins[i * 2], encoderPins[i * 2 + 1]);
             }
-            encoderNum = min(encoderCount, DIAL_COUNT);
+            encoderNum = min(encoderCount, maxEncoderCount);
         }
 
         void init()
