@@ -94,6 +94,9 @@ namespace Input
             TJpgDec.setSwapBytes(true);
             TJpgDec.setCallback(LCD::tft_output);
 
+            pinMode(TFT_LED, OUTPUT);
+            analogWrite(TFT_LED, 0xFF);
+
             tft.init();
             tft.setRotation(1);
             tft.fillScreen(TFT_BLACK);
@@ -180,6 +183,16 @@ namespace Input
                 }
             }
             return 0x80;
+        }
+
+        /**
+         * @brief Set the brightness
+         * 
+         * @param brightness 0-100
+         */
+        void set_brightness(uint8_t brightness)
+        {
+            analogWrite(TFT_LED, map(brightness, 0, 100, 0, 0xFF));
         }
 
     private:
