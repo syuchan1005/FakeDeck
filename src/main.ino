@@ -30,10 +30,6 @@ void setup()
     lcd.init();
     file_repository.init();
     lcd.calibrate(file_repository);
-
-    //Serial.println("Setup");
-    pinMode(TFT_LED, OUTPUT);
-    analogWrite(TFT_LED, 0xFF);
 }
 
 uint8_t report[INPUT_REPORT_LEN] = { 0, KEY_COUNT, 0 };
@@ -192,7 +188,7 @@ void set_report_callback(uint8_t report_id, hid_report_type_t report_type, uint8
             Serial.println("Reset");
         } else if (report_id == 0x03 && buffer[0] == 0x08)
         {
-            analogWrite(TFT_LED, map(buffer[1], 0, 100, 0, 0xFF));
+            lcd.set_brightness(buffer[1]);
         }
     }
 
