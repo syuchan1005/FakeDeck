@@ -39,7 +39,7 @@ uint32_t prevExecutedMillis = 0;
 void loop()
 {
     uint32_t currentMillis = millis();
-    if (currentMillis - prevExecutedMillis < 10)
+    if (currentMillis - prevExecutedMillis < 100)
     {
         return;
     }
@@ -222,7 +222,7 @@ void set_report_callback(uint8_t report_id, hid_report_type_t report_type, uint8
             image_buffer_written_len += image_length;
 
             if (is_last) {
-                lcd.draw_key_image(file_repository, key_index, image_buffer, image_buffer_written_len);
+                lcd.draw_key_image(key_index, image_buffer, image_buffer_written_len);
                 image_buffer_written_len = 0;
             }
         } else if (report_id == 0x02 && buffer[0] == 0x0C) {

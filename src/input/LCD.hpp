@@ -138,7 +138,7 @@ namespace Input
             }
         }
 
-        void draw_key_image(FileRepository &file_repository, uint8_t key_index, uint8_t *buffer, uint16_t buffer_size)
+        void draw_key_image(uint8_t key_index, uint8_t *buffer, uint16_t buffer_size)
         {
             uint8_t lcd_key_index = KEY_COUNT - key_index - 1;
             int16_t x_spacing = (tft.width() - KEY_IMAGE_SIZE * KEY_COUNT_COL) / (KEY_COUNT_COL + 1);
