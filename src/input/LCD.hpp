@@ -94,12 +94,12 @@ namespace Input
             TJpgDec.setSwapBytes(true);
             TJpgDec.setCallback(LCD::tft_output);
 
-            pinMode(TFT_LED, OUTPUT);
-            analogWrite(TFT_LED, 0xFF);
-
             tft.init();
             tft.setRotation(1);
             tft.fillScreen(TFT_BLACK);
+
+            pinMode(TFT_LED, OUTPUT);
+            analogWrite(TFT_LED, 0xFF);
         }
 
         void calibrate(FileRepository &file_repository, bool force_calibration = false)
