@@ -34,9 +34,15 @@ void setup()
 
 uint8_t report[INPUT_REPORT_LEN] = { 0, KEY_COUNT, 0 };
 uint8_t prevPressedKey = 0x80;
+uint32_t prevExecutedMillis = 0;
+// WARNING: We should not use `wait` function (e.g. `delay`) in this function. TinyUSB's tud_task should be called in the loop. And it's needed to be called very frequently.
 void loop()
 {
-    delay(100);
+    uint32_t currentMillis = millis();
+    if (currentMillis - prevExecutedMillis < 10)
+    {
+        return;
+    }
     uint8_t pressedKey = lcd.get_pressed_button();
     bool shouldSendPressedReport = false;
     if (pressedKey != 0x80 && pressedKey != prevPressedKey)
@@ -55,6 +61,8 @@ void loop()
         usb_hid.sendReport(1, report, sizeof(report));
     }
     memset(report + 3, 0, KEY_COUNT);
+
+    prevExecutedMillis = currentMillis;
 
     // maybeSendDialReport();
 
