@@ -73,7 +73,6 @@ namespace Input
             if (p.z < threshold)
                 return 0;
 
-            Serial.printf("Touch: %d, %d, %d\n", p.x, p.y, p.z);
             *x = map(p.x, 3940, 220, 0, tft.width());
             *y = map(p.y, 3870, 310, 0, tft.height());
             return 1;
@@ -157,7 +156,6 @@ namespace Input
         {
             uint16_t x, y;
             uint8_t isTouched = touch->getTouch(&x, &y, 600);
-            // Serial.printf("isTouched: %d, x: %d, y: %d\n", isTouched, x, y);
             if (isTouched)
             {
 #ifdef DEBUG_TOUCH
