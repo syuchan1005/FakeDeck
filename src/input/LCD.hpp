@@ -85,13 +85,16 @@ namespace Input
     std::unique_ptr<Touch> touch = std::make_unique<XPT2046_Touch>();
 
 #endif // RP2040_PIO_SPI
+
+    const uint8_t NO_KEY_PRESSED = 0x80;
+
     class LCD
     {
     public:
         void init()
         {
             TJpgDec.setSwapBytes(true);
-            TJpgDec.setCallback(LCD::tft_output);
+            TJpgDec.setCallback(LCD::draw_image_callback);
 
             tft.init();
             tft.setRotation(1);
@@ -150,7 +153,7 @@ namespace Input
         /**
          * @brief Get the pressed button index
          *
-         * @return uint8_t if no button is pressed, returns 0x80 (first bit is set to 1)
+         * @return uint8_t if no button is pressed, returns [NO_KEY_PRESSED].
          */
         uint8_t get_pressed_button()
         {
@@ -180,12 +183,12 @@ namespace Input
                     }
                 }
             }
-            return 0x80;
+            return NO_KEY_PRESSED;
         }
 
         /**
          * @brief Set the brightness
-         * 
+         *
          * @param brightness 0-100
          */
         void set_brightness(uint8_t brightness)
@@ -194,7 +197,7 @@ namespace Input
         }
 
     private:
-        static bool tft_output(int16_t x, int16_t y, uint16_t w, uint16_t h, uint16_t *bitmap)
+        static bool draw_image_callback(int16_t x, int16_t y, uint16_t w, uint16_t h, uint16_t *bitmap)
         {
             // Stop further decoding as image is running off bottom of screen
             if (y >= tft.height())

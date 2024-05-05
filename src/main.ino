@@ -1,17 +1,32 @@
+#include <memory>
+#include <algorithm>
 #include <Adafruit_TinyUSB.h>
 #include "./usb_descriptors.hpp"
 #include "./input/LCD.hpp"
 #include "./FileRepository.hpp"
 
-Input::LCD lcd;
-FileRepository file_repository;
 Adafruit_USBD_HID usb_hid;
 uint8_t const desc_hid_report[] = {TUD_HID_REPORT_DESC()};
+
+Input::LCD lcd;
+FileRepository file_repository;
 
 // 6.2.0.18816
 uint8_t version[20] = {0x0C, 0xD9, 0x4B, 0x72, 0xE0, 0x36, 0x2E, 0x32, 0x2E, 0x30, 0x2E, 0x31, 0x38, 0x38, 0x31, 0x36, 0x00, 0x00, 0x00};
 // ZZZZZZZZZZZZZ
 uint8_t serial[20] = {0x0C, 0x00, 0x00, 0x00, 0x00, 0x00, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A, 0x00, 0x00};
+
+queue_t draw_image_queue;
+struct draw_image_t
+{
+public:
+    uint8_t key_index;
+    uint8_t image_data[MAX_IMAGE_SIZE_BYTES];
+    uint16_t image_length;
+};
+
+queue_t brightness_queue;
+queue_t pressed_key_queue;
 
 void setup()
 {
@@ -27,87 +42,76 @@ void setup()
     usb_hid.setReportCallback(get_report_callback, pre_set_report_callback);
     usb_hid.begin();
 
+    queue_init(&draw_image_queue, sizeof(draw_image_t), 10);
+    queue_init(&brightness_queue, sizeof(uint8_t), 2);
+    queue_init(&pressed_key_queue, sizeof(uint8_t), 2);
+}
+
+// WARNING: We should not use `wait` function (e.g. `delay`) in this function. TinyUSB's tud_task should be called in the loop. And it's needed to be called very frequently.
+void loop()
+{
+    uint8_t pressed_key = Input::NO_KEY_PRESSED;
+    if (queue_try_remove(&pressed_key_queue, &pressed_key))
+    {
+        if (pressed_key != Input::NO_KEY_PRESSED)
+        {
+            Serial.printf("Pressed Key: %d\n", pressed_key);
+            uint8_t report[INPUT_REPORT_LEN] = {0, KEY_COUNT, 0};
+            report[pressed_key + 3] = 1;
+            usb_hid.sendReport(1, report, sizeof(report));
+        }
+        else
+        {
+            Serial.println("No Key Pressed");
+            uint8_t report[INPUT_REPORT_LEN] = {0, KEY_COUNT, 0};
+            usb_hid.sendReport(1, report, sizeof(report));
+        }
+    }
+}
+
+void setup1()
+{
     lcd.init();
     file_repository.init();
     lcd.calibrate(file_repository);
 }
 
-uint8_t report[INPUT_REPORT_LEN] = { 0, KEY_COUNT, 0 };
-uint8_t prevPressedKey = 0x80;
-uint32_t prevExecutedMillis = 0;
-// WARNING: We should not use `wait` function (e.g. `delay`) in this function. TinyUSB's tud_task should be called in the loop. And it's needed to be called very frequently.
-void loop()
+void loop1()
 {
-    uint32_t currentMillis = millis();
-    if (currentMillis - prevExecutedMillis < 100)
+    draw_image_t entry;
+    if (queue_try_remove(&draw_image_queue, &entry))
+    {
+        Serial.printf("Draw Key Image: %d\n", entry.key_index);
+        lcd.draw_key_image(entry.key_index, entry.image_data, entry.image_length);
+    }
+    uint8_t brightness;
+    if (queue_try_remove(&brightness_queue, &brightness))
+    {
+        lcd.set_brightness(brightness);
+    }
+
+    maybe_send_pressed_key();
+}
+
+uint8_t previous_pressed_key = Input::NO_KEY_PRESSED;
+uint32_t previous_executed_millis = 0;
+void maybe_send_pressed_key()
+{
+    uint32_t current_millis = millis();
+    if (current_millis - previous_executed_millis < 10)
     {
         return;
     }
-    uint8_t pressedKey = lcd.get_pressed_button();
+    previous_executed_millis = current_millis;
+
+    uint8_t pressed_key = lcd.get_pressed_button();
     bool shouldSendPressedReport = false;
-    if (pressedKey != 0x80 && pressedKey != prevPressedKey)
+    if (pressed_key != previous_pressed_key)
     {
-        Serial.printf("Pressed Key: %d\n", pressedKey);
-        report[pressedKey + 3] = 1;
-        shouldSendPressedReport = true;
-    } else if (pressedKey == 0x80 && prevPressedKey != 0x80)
-    {
-        Serial.printf("Released Key: %d\n", prevPressedKey);
-        shouldSendPressedReport = true;
+        queue_add_blocking(&pressed_key_queue, &pressed_key);
     }
-    prevPressedKey = pressedKey;
-    if (shouldSendPressedReport)
-    {
-        usb_hid.sendReport(1, report, sizeof(report));
-    }
-    memset(report + 3, 0, KEY_COUNT);
-
-    prevExecutedMillis = currentMillis;
-
-    // maybeSendDialReport();
-
-    /*
-    uint8_t touchscreenReport[INPUT_REPORT_LEN] = {
-        0x02, 0x01, 0x00,    // touch, count(?), ?
-        0x01,                // short
-        U16_TO_U8S_LE(0x0A), // x
-        U16_TO_U8S_LE(0x0A)  // y
-    };
-    See more: py\Lib\site-packages\StreamDeck\Devices\StreamDeckPlus.py#L356
-    */
+    previous_pressed_key = pressed_key;
 }
-
-/*
-std::vector<int8_t> dialValues;
-void maybeSendDialReport() {
-    bool isDialChanged = false;
-    std::vector<int8_t> newDialValues = encoders.getEncoderValues();
-    uint8_t dialReport[INPUT_REPORT_LEN] = {
-        0x03, DIAL_COUNT, 0x00, // dial, count, ?
-        0x01,                   // 1turn(val) 0push(bool)
-        0x00,                   // dials
-    };
-    if (dialValues.size() != newDialValues.size()) {
-        for (uint8_t i = 0; i < newDialValues.size(); i++)
-        {
-            dialReport[i + 4] = newDialValues[i];
-        }
-        isDialChanged = true;
-    } else if (dialValues != newDialValues)
-    {
-        for (uint8_t i = 0; i < newDialValues.size(); i++)
-        {
-            dialReport[i + 4] = newDialValues[i] - dialValues[i];
-        }
-        isDialChanged = true;
-    }
-    if (isDialChanged) {
-        dialValues = newDialValues;
-        usb_hid.sendReport(1, dialReport, sizeof(dialReport));
-        Serial.printf("Dial Changed: %d\n", (int8_t) dialReport[4]);
-    }
-}
-*/
 
 uint16_t get_report_callback(uint8_t report_id, hid_report_type_t report_type, uint8_t *buffer, uint16_t reqlen)
 {
@@ -122,12 +126,13 @@ uint16_t get_report_callback(uint8_t report_id, hid_report_type_t report_type, u
         if (report_id == 0x05)
         {
             // version
-            memmove(buffer, version, reqlen);
+            std::copy_n(version, reqlen, buffer);
             return sizeof(buffer) * 8 - 1;
-        } else if (report_id == 0x06)
+        }
+        else if (report_id == 0x06)
         {
             // serial
-            memmove(buffer, serial, reqlen);
+            std::copy_n(serial, reqlen, buffer);
             return sizeof(buffer) * 8 - 1;
         }
     }
@@ -145,7 +150,7 @@ void pre_set_report_callback(uint8_t report_id, hid_report_type_t report_type, u
     char str[110];
     sprintf(
         str,
-        "SET Report Type: %d, Report ID: %d, len: %d, outputlen: %d, buf: [%02X, %02X, ...]",
+        "SET Report Type: %d, Report ID: %d, len: %d, outputlen: %04d, buf: [%02X, %02X, ...]",
         report_type, report_id, bufsize, output_report_written_len,
         buffer[0], buffer[1]);
     Serial.println(str);
@@ -156,14 +161,17 @@ void pre_set_report_callback(uint8_t report_id, hid_report_type_t report_type, u
         if (output_report_written_len == 0)
         {
             output_report_id = buffer[0];
-            memmove(output_report_buffer, buffer + 1, bufsize - 1);
+            std::copy_n(buffer + 1, bufsize - 1, output_report_buffer);
             output_report_written_len = bufsize - 1;
-        } else {
-            memmove(output_report_buffer + output_report_written_len, buffer, bufsize);
+        }
+        else
+        {
+            std::copy_n(buffer, bufsize, output_report_buffer + output_report_written_len);
             output_report_written_len += bufsize;
         }
 
-        if (output_report_written_len < OUTPUT_REPORT_LEN) {
+        if (output_report_written_len < OUTPUT_REPORT_LEN)
+        {
             // report data is not complete yet
             return;
         }
@@ -194,15 +202,16 @@ void set_report_callback(uint8_t report_id, hid_report_type_t report_type, uint8
         if (report_id == 0x03 && buffer[0] == 0x02)
         {
             Serial.println("Reset");
-        } else if (report_id == 0x03 && buffer[0] == 0x08)
+        }
+        else if (report_id == 0x03 && buffer[0] == 0x08)
         {
-            lcd.set_brightness(buffer[1]);
+            queue_add_blocking(&brightness_queue, &buffer[1]);
         }
     }
 
     if (report_type == HID_REPORT_TYPE_OUTPUT)
     {
-        Serial.printf("Output Report: %d, [%02X, %02X, %02X, %02X, %02X, %02X]\n", report_id, buffer[0], buffer[1], buffer[2], buffer[3], buffer[4], buffer[5]);
+        Serial.printf("Output Report: %d, %d, [%02X, %02X, %02X, %02X, %02X, %02X]\n", report_id, bufsize, buffer[0], buffer[1], buffer[2], buffer[3], buffer[4], buffer[5]);
 
         // reset image buffer when another request comes
         if (report_id == 0x02 && image_buffer_written_len > 0 && buffer[0] != image_type)
@@ -210,7 +219,8 @@ void set_report_callback(uint8_t report_id, hid_report_type_t report_type, uint8
             image_buffer_written_len = 0;
         }
 
-        if (report_id == 0x02 && buffer[0] == 0x07) {
+        if (report_id == 0x02 && buffer[0] == 0x07)
+        {
             // key image
             image_type = buffer[0];
             uint8_t key_index = buffer[1];
@@ -218,14 +228,22 @@ void set_report_callback(uint8_t report_id, hid_report_type_t report_type, uint8
             uint16_t image_length = buffer[3] | (buffer[4] << 8);
             uint16_t page_number = buffer[5] | (buffer[6] << 8);
 
-            memmove(image_buffer + image_buffer_written_len, buffer + 7, image_length);
+            std::copy_n(buffer + 7, image_length, image_buffer + image_buffer_written_len);
             image_buffer_written_len += image_length;
 
-            if (is_last) {
-                lcd.draw_key_image(key_index, image_buffer, image_buffer_written_len);
+            if (is_last)
+            {
+                draw_image_t entry;
+                entry.key_index = key_index;
+                entry.image_length = image_buffer_written_len;
+                std::copy_n(image_buffer, image_buffer_written_len, entry.image_data);
+                Serial.printf("Add Draw Image Queue: %d\n", key_index);
+                queue_add_blocking(&draw_image_queue, &entry);
                 image_buffer_written_len = 0;
             }
-        } else if (report_id == 0x02 && buffer[0] == 0x0C) {
+        }
+        else if (report_id == 0x02 && buffer[0] == 0x0C)
+        {
             // touchscreen image
             image_type = buffer[0];
             uint16_t x_pos = buffer[1] | (buffer[2] << 8);
@@ -235,19 +253,22 @@ void set_report_callback(uint8_t report_id, hid_report_type_t report_type, uint8
             uint8_t is_last = buffer[9];
             uint16_t page_number = buffer[10] | (buffer[11] << 8);
             uint16_t image_length = buffer[12] | (buffer[13] << 8);
-            // padding = buffer[14]
+            // padding = buffer[14]testesttestest
 
-            memmove(image_buffer + image_buffer_written_len, buffer + 15, image_length);
+            std::copy_n(buffer + 15, image_length, image_buffer + image_buffer_written_len);
             image_buffer_written_len += image_length;
 
-            if (is_last) {
+            if (is_last)
+            {
                 // TODO: draw lcd
                 image_buffer_written_len = 0;
             }
-        } else if (report_id == 0x02 && buffer[0] == 0xFF)
+        }
+        else if (report_id == 0x02 && buffer[0] == 0xFF)
         {
             rp2040.rebootToBootloader();
-        } else if (report_id == 0x02 && buffer[0] == 0xFE)
+        }
+        else if (report_id == 0x02 && buffer[0] == 0xFE)
         {
             rp2040.reboot();
         }
