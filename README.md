@@ -37,6 +37,5 @@ Using raspberry pi pico as a stream deck
 - Reboot device: Send `[02, FE]` to the output report
 
 ## TODO
-- Make USB and LCD buffer
 - Support touchscreen and dial report - for Plus
 - Support infobar and touch key - for Neo
