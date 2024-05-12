@@ -22,7 +22,7 @@ namespace Input
         virtual uint8_t getTouch(uint16_t *x, uint16_t *y, uint16_t threshold) = 0;
     };
 
-#ifndef RP2040_PIO_SPI
+#ifndef USE_ORIGINAL_TOUCH
     class TFT_Touch : public Touch
     {
     public:
