@@ -109,7 +109,7 @@ namespace Input
             uint16_t calData[5];
             bool hasCalData = false;
             if (!force_calibration &&
-                file_repository.readFile(CALIBRATION_FILE, (uint8_t *)calData, 14))
+                file_repository.readFile(CALIBRATION_FILE, (uint8_t *)calData, 14) == 14)
             {
                 hasCalData = true;
             }
@@ -148,6 +148,7 @@ namespace Input
             int16_t y_spacing = (tft.height() - KEY_IMAGE_SIZE * KEY_COUNT_ROW) / (KEY_COUNT_ROW + 1);
             int16_t y = y_spacing + (KEY_IMAGE_SIZE + y_spacing) * (lcd_key_index / KEY_COUNT_COL);
             TJpgDec.drawJpg(x, y, buffer, buffer_size);
+            tft.drawRoundRect(x - 2, y - 2, KEY_IMAGE_SIZE + 4, KEY_IMAGE_SIZE + 4, 8, TFT_WHITE);
         }
 
         /**
