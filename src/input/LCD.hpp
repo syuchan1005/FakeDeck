@@ -3,7 +3,7 @@
 
 #include <memory>
 #include <TFT_eSPI.h>
-#include <TJpg_Decoder.h>
+#include <JPEGDEC.h>
 #include <XPT2046_Touchscreen.h>
 #include "../usb_descriptors.hpp"
 #include "../FileRepository.hpp"
@@ -13,6 +13,7 @@
 namespace Input
 {
     TFT_eSPI tft;
+    JPEGDEC jpeg;
 
     class Touch
     {
@@ -93,9 +94,6 @@ namespace Input
     public:
         void init()
         {
-            TJpgDec.setSwapBytes(true);
-            TJpgDec.setCallback(LCD::draw_image_callback);
-
             tft.init();
             tft.setRotation(1);
             tft.fillScreen(TFT_BLACK);
@@ -147,7 +145,14 @@ namespace Input
             int16_t x = x_spacing + (KEY_IMAGE_SIZE + x_spacing) * (lcd_key_index % KEY_COUNT_COL);
             int16_t y_spacing = (tft.height() - KEY_IMAGE_SIZE * KEY_COUNT_ROW) / (KEY_COUNT_ROW + 1);
             int16_t y = y_spacing + (KEY_IMAGE_SIZE + y_spacing) * (lcd_key_index / KEY_COUNT_COL);
-            TJpgDec.drawJpg(x, y, buffer, buffer_size);
+            // TJpgDec.drawJpg(x, y, buffer, buffer_size);
+
+            if (jpeg.openRAM(buffer, buffer_size, LCD::JPEGDraw))
+            {
+                jpeg.decode(x, y, 0);
+                jpeg.close();
+            }
+
             tft.drawRoundRect(x - 2, y - 2, KEY_IMAGE_SIZE + 4, KEY_IMAGE_SIZE + 4, 8, TFT_WHITE);
         }
 
@@ -198,16 +203,16 @@ namespace Input
         }
 
     private:
-        static bool draw_image_callback(int16_t x, int16_t y, uint16_t w, uint16_t h, uint16_t *bitmap)
+        static int JPEGDraw(JPEGDRAW *pDraw)
         {
-            // Stop further decoding as image is running off bottom of screen
-            if (y >= tft.height())
-                return 0;
+            // swap bytes
+            for (uint32_t i = 0; i < pDraw->iWidth * pDraw->iHeight; i++)
+            {
+                uint16_t color = pDraw->pPixels[i];
+                pDraw->pPixels[i] = (color << 8) | (color >> 8);
+            }
 
-            // This function will clip the image block rendering automatically at the TFT boundaries
-            tft.pushImage(x, y, w, h, bitmap);
-
-            // Return 1 to decode next block
+            tft.pushImage(pDraw->x, pDraw->y, pDraw->iWidth, pDraw->iHeight, pDraw->pPixels);
             return 1;
         }
     };
