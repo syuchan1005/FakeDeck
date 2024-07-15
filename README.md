@@ -8,7 +8,7 @@ Using raspberry pi pico as a stream deck
 - Stream deck v2
 - WIP: Stream deck Plus
 
-## How to create
+## How to create : StreamDeck Mk.2
 ### Parts
 - Raspberry Pi Pico
 - ILI9488 TFT with Touch: [AliExpress](https://www.aliexpress.com/item/32985467436.html)
@@ -30,6 +30,28 @@ Using raspberry pi pico as a stream deck
 1. Setup [PlatformIO IDE](https://platformio.org/platformio-ide)
 2. Clone and open this project
 3. Build .uf2 file!
+
+## How to create : StreamDeck+ - WIP!
+
+### Wire
+![wire_plus](./assets/wire_plus.jpg)
+
+### projects
+
+#### pico_avrisp_wifi
+Write to avr microcontroller (attiny2313) using Raspberry Pi Pico W via WiFi
+
+This project access WiFi AP. You should copy `config.sample.ini` to `config.ini`, and change values to your Wifi settings.
+
+> [!NOTE]
+> In my enviroment, [avrdude](https://github.com/avrdudes/avrdude) can not communicate with Raspberry Pi Pico via usb serial. So, It write to avr microcontroller via WiFi.
+
+> [!IMPORTANT]
+> In my environment, avrdude 6.3(PlatformIO embedded version) can not write via WiFi. Please update to **^7.3**. (You can replace files in `tool-avrdude` package)
+
+##### Reference
+- [ESP8266AVRISP](https://github.com/esp8266/Arduino/tree/19b7a29720a6f2c95d06e2ea4baa335dcf32e68f/libraries/ESP8266AVRISP)
+
 
 ### Tips
 - [HID Explorer](https://nondebug.github.io/webhid-explorer/) is an easy HID testing tool using WebHID
