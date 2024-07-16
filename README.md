@@ -52,6 +52,13 @@ This project access WiFi AP. You should copy `config.sample.ini` to `config.ini`
 ##### Reference
 - [ESP8266AVRISP](https://github.com/esp8266/Arduino/tree/19b7a29720a6f2c95d06e2ea4baa335dcf32e68f/libraries/ESP8266AVRISP)
 
+#### avr
+Get the four rotary encoder with push switch values via SPI.
+
+##### Reference
+SPISlave.hpp
+ - [avr-usi-spi](https://github.com/tessel/avr-usi-spi/blob/77ce496d6bc404684158e619695c2fb7bc76815a/spi_via_usi_driver.c)
+
 
 ### Tips
 - [HID Explorer](https://nondebug.github.io/webhid-explorer/) is an easy HID testing tool using WebHID
