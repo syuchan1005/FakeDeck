@@ -70,6 +70,8 @@ ISR(TIMER0_COMPB_vect)
     USICR |= (1 << USITC); // Toggle clock output pin.
 }
 
+uint16_t sendData = 0;
+
 /*! \brief  USI Timer Overflow Interrupt handler.
  *
  *  This handler disables the compare match interrupt if in master mode.
@@ -84,6 +86,15 @@ ISR(USI_OVERFLOW_vect)
     spiX_status.transferComplete = 1;
     // Copy USIDR to buffer to prevent overwrite on next transfer.
     storedUSIDR = USIDR;
+    if (storedUSIDR == 0) {
+        // send lower 8bit from data
+        USIDR = sendData & 0x00FF;
+        sendData = sendData & 0xFF00;
+    } else {
+        // send upper 8bit from data
+        USIDR = (sendData & 0xFF00) >> 8;
+        sendData = sendData & 0x00FF;
+    }
 }
 
 /*! \brief  Initialize USI as SPI slave.
