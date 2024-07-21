@@ -4,8 +4,6 @@
 #define ORIGINAL_V2 1
 #define PLUS 2
 
-#define DECK ORIGINAL_V2
-
 #if DECK == ORIGINAL_V2
 
   #define DECK_USB_PID 0x006d
@@ -40,6 +38,8 @@
 
   #define INPUT_REPORT_LEN 14
 
+#else
+  #error "Invalid DECK value"
 #endif
 
 #endif // DECK_CONFIG_HPP
