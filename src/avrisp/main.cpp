@@ -87,11 +87,18 @@ void loop()
     last_state = new_state;
   }
 
-  if (isInited && millis() - latestMillis > 1000)
+  if (isInited && millis() - latestMillis > 500)
   {
     latestMillis = millis();
-    uint16_t rxbuf = SPI.transfer16(0);
-    Serial.printf("Received: %02X\r\n", rxbuf);
+    SPI.transfer(0);
+    uint8_t lowerRxbuf = SPI.transfer(1);
+    uint8_t upperRxbuf = SPI.transfer(0);
+    uint16_t rxbuf = (upperRxbuf << 8) | lowerRxbuf;
+    if (rxbuf != 0)
+    {
+      Serial.printf("Received: ");
+      Serial.println(rxbuf, BIN);
+    }
   }
 
   // Serve the client

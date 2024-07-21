@@ -42,7 +42,7 @@ void setup()
     usb_hid.setReportCallback(get_report_callback, pre_set_report_callback);
     usb_hid.begin();
 
-    queue_init(&draw_image_queue, sizeof(draw_image_t), 10);
+    queue_init(&draw_image_queue, sizeof(draw_image_t), 2);
     queue_init(&brightness_queue, sizeof(uint8_t), 2);
     queue_init(&pressed_key_queue, sizeof(uint8_t), 2);
 }
