@@ -3,17 +3,25 @@
 
 #include <memory>
 #include <TFT_eSPI.h>
-#include <JPEGDEC.h>
 #include <XPT2046_Touchscreen.h>
 #include "../usb_descriptors.hpp"
 #include "../FileRepository.hpp"
+
+#if defined(USE_TJPG)
+#include <TJpg_Decoder.h>
+#else
+#include <JPEGDEC.h>
+#endif
 
 #define CALIBRATION_FILE "/lcd_calibration.dat"
 
 namespace Input
 {
     TFT_eSPI tft;
+
+#if !defined(USE_TJPG)
     JPEGDEC jpeg;
+#endif
 
     class Touch
     {
@@ -23,7 +31,7 @@ namespace Input
         virtual uint8_t getTouch(uint16_t *x, uint16_t *y, uint16_t threshold) = 0;
     };
 
-#ifndef USE_ORIGINAL_TOUCH
+#if !defined(USE_ORIGINAL_TOUCH)
     class TFT_Touch : public Touch
     {
     public:
@@ -85,7 +93,7 @@ namespace Input
 
     std::unique_ptr<Touch> touch = std::make_unique<XPT2046_Touch>();
 
-#endif // RP2040_PIO_SPI
+#endif
 
     const uint8_t NO_KEY_PRESSED = 0x80;
 
@@ -94,6 +102,10 @@ namespace Input
     public:
         void init()
         {
+#if defined(USE_TJPG)
+            TJpgDec.setSwapBytes(true);
+            TJpgDec.setCallback(LCD::draw_image_callback);
+#endif
             tft.init();
             tft.setRotation(1);
             tft.fillScreen(TFT_BLACK);
@@ -145,13 +157,16 @@ namespace Input
             int16_t x = x_spacing + (KEY_IMAGE_SIZE + x_spacing) * (lcd_key_index % KEY_COUNT_COL);
             int16_t y_spacing = (tft.height() - KEY_IMAGE_SIZE * KEY_COUNT_ROW) / (KEY_COUNT_ROW + 1);
             int16_t y = y_spacing + (KEY_IMAGE_SIZE + y_spacing) * (lcd_key_index / KEY_COUNT_COL);
-            // TJpgDec.drawJpg(x, y, buffer, buffer_size);
 
+#if defined(USE_TJPG)
+            TJpgDec.drawJpg(x, y, buffer, buffer_size);
+#else
             if (jpeg.openRAM(buffer, buffer_size, LCD::JPEGDraw))
             {
                 jpeg.decode(x, y, 0);
                 jpeg.close();
             }
+#endif
 
             tft.drawRoundRect(x - 2, y - 2, KEY_IMAGE_SIZE + 4, KEY_IMAGE_SIZE + 4, 8, TFT_WHITE);
         }
@@ -203,6 +218,20 @@ namespace Input
         }
 
     private:
+#if defined(USE_TJPG)
+        static bool draw_image_callback(int16_t x, int16_t y, uint16_t w, uint16_t h, uint16_t *bitmap)
+        {
+            // Stop further decoding as image is running off bottom of screen
+            if (y >= tft.height())
+                return 0;
+
+            // This function will clip the image block rendering automatically at the TFT boundaries
+            tft.pushImage(x, y, w, h, bitmap);
+
+            // Return 1 to decode next block
+            return 1;
+        }
+#else
         static int JPEGDraw(JPEGDRAW *pDraw)
         {
             // swap bytes
@@ -215,6 +244,7 @@ namespace Input
             tft.pushImage(pDraw->x, pDraw->y, pDraw->iWidth, pDraw->iHeight, pDraw->pPixels);
             return 1;
         }
+#endif
     };
 }
 
