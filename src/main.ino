@@ -42,7 +42,7 @@ void setup()
     usb_hid.setReportCallback(get_report_callback, pre_set_report_callback);
     usb_hid.begin();
 
-    queue_init(&draw_image_queue, sizeof(draw_image_t), 2);
+    queue_init(&draw_image_queue, sizeof(draw_image_t), 5);
     queue_init(&brightness_queue, sizeof(uint8_t), 2);
     queue_init(&pressed_key_queue, sizeof(uint8_t), 2);
 }
@@ -237,8 +237,10 @@ void set_report_callback(uint8_t report_id, hid_report_type_t report_type, uint8
                 entry.key_index = key_index;
                 entry.image_length = image_buffer_written_len;
                 std::copy_n(image_buffer, image_buffer_written_len, entry.image_data);
+                // NOTE: Sometime, queue_add_blocking is bit freeze and USB communication will be stopped.
+                //     So, it's better to use queue_try_add. Be careful about the queue size.
                 Serial.printf("Add Draw Image Queue: %d\n", key_index);
-                queue_add_blocking(&draw_image_queue, &entry);
+                queue_try_add(&draw_image_queue, &entry);
                 image_buffer_written_len = 0;
             }
         }
