@@ -16,13 +16,13 @@ uint8_t version[20] = {0x0C, 0xD9, 0x4B, 0x72, 0xE0, 0x36, 0x2E, 0x32, 0x2E, 0x3
 // ZZZZZZZZZZZZZ
 uint8_t serial[20] = {0x0C, 0x00, 0x00, 0x00, 0x00, 0x00, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A, 0x00, 0x00};
 
-queue_t draw_image_queue;
-struct draw_image_t
+queue_t report_packet_queue;
+struct report_packet_t
 {
-public:
-    uint8_t key_index;
-    uint8_t image_data[MAX_IMAGE_SIZE_BYTES];
-    uint16_t image_length;
+    uint8_t report_id;
+    hid_report_type_t report_type;
+    uint8_t buffer[OUTPUT_REPORT_LEN];
+    uint16_t bufsize;
 };
 
 queue_t brightness_queue;
@@ -42,7 +42,7 @@ void setup()
     usb_hid.setReportCallback(get_report_callback, pre_set_report_callback);
     usb_hid.begin();
 
-    queue_init(&draw_image_queue, sizeof(draw_image_t), 5);
+    queue_init(&report_packet_queue, sizeof(report_packet_t), 20);
     queue_init(&brightness_queue, sizeof(uint8_t), 2);
     queue_init(&pressed_key_queue, sizeof(uint8_t), 2);
 }
@@ -78,12 +78,12 @@ void setup1()
 
 void loop1()
 {
-    draw_image_t entry;
-    if (queue_try_remove(&draw_image_queue, &entry))
+    report_packet_t packet;
+    if (queue_try_remove(&report_packet_queue, &packet))
     {
-        Serial.printf("Draw Key Image: %d\n", entry.key_index);
-        lcd.draw_key_image(entry.key_index, entry.image_data, entry.image_length);
+        set_report_callback(packet.report_id, packet.report_type, packet.buffer, packet.bufsize);
     }
+
     uint8_t brightness;
     if (queue_try_remove(&brightness_queue, &brightness))
     {
@@ -176,7 +176,7 @@ void pre_set_report_callback(uint8_t report_id, hid_report_type_t report_type, u
             return;
         }
 
-        set_report_callback(output_report_id, HID_REPORT_TYPE_OUTPUT, output_report_buffer, output_report_written_len);
+        emit_report_packet(output_report_id, HID_REPORT_TYPE_OUTPUT, output_report_buffer, output_report_written_len);
         output_report_written_len = 0;
         return;
     }
@@ -188,7 +188,17 @@ void pre_set_report_callback(uint8_t report_id, hid_report_type_t report_type, u
         output_report_written_len = 0;
     }
 
-    set_report_callback(report_id, report_type, buffer, bufsize);
+    emit_report_packet(report_id, report_type, buffer, bufsize);
+}
+
+void emit_report_packet(uint8_t report_id, hid_report_type_t report_type, uint8_t const *buffer, uint16_t bufsize)
+{
+    report_packet_t packet;
+    packet.report_id = report_id;
+    packet.report_type = report_type;
+    std::copy_n(buffer, bufsize, packet.buffer);
+    packet.bufsize = bufsize;
+    queue_try_add(&report_packet_queue, &packet);
 }
 
 uint8_t image_type = 0; // 0x07: key, 0x0C: touchscreen
@@ -233,14 +243,8 @@ void set_report_callback(uint8_t report_id, hid_report_type_t report_type, uint8
 
             if (is_last)
             {
-                draw_image_t entry;
-                entry.key_index = key_index;
-                entry.image_length = image_buffer_written_len;
-                std::copy_n(image_buffer, image_buffer_written_len, entry.image_data);
-                // NOTE: Sometime, queue_add_blocking is bit freeze and USB communication will be stopped.
-                //     So, it's better to use queue_try_add. Be careful about the queue size.
-                Serial.printf("Add Draw Image Queue: %d\n", key_index);
-                queue_try_add(&draw_image_queue, &entry);
+                Serial.printf("Draw image: %d\n", key_index);
+                lcd.draw_key_image(key_index, image_buffer, image_buffer_written_len);
                 image_buffer_written_len = 0;
             }
         }
