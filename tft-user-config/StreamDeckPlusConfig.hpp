@@ -14,21 +14,21 @@
 
 // #define TFT_CS // to GND
 // #define TFT_RD // to 3V3
-#define TFT_DC 16
-#define TFT_RST 6
-#define TFT_WR 17
+#define TFT_DC 11
+#define TFT_RST 20
+#define TFT_WR 10
 
 // PIO requires these to be sequentially increasing
-#define TFT_D0   8
-#define TFT_D1   9
-#define TFT_D2   10
-#define TFT_D3   11
-#define TFT_D4   12
-#define TFT_D5   13
-#define TFT_D6   14
-#define TFT_D7   15
+#define TFT_D0 2
+#define TFT_D1 3
+#define TFT_D2 4
+#define TFT_D3 5
+#define TFT_D4 6
+#define TFT_D5 7
+#define TFT_D6 8
+#define TFT_D7 9
 
-#define TFT_LED 7
+#define TFT_LED 21
 
 #define LOAD_GLCD
 #define LOAD_FONT2
@@ -41,8 +41,8 @@
 
 #define USE_ORIGINAL_TOUCH
 #define TFT_MISO2 12
-#define TFT_MOSI2 11
-#define TFT_SCLK2 10
+#define TFT_MOSI2 15
+#define TFT_SCLK2 14
 #define TOUCH_CS2 13
 #define TOUCH_X p.y, 3700, 250
 #define TOUCH_Y p.x, 450, 3600

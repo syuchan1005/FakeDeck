@@ -10,7 +10,7 @@
 #endif
 
 const uint16_t port = 328;
-const uint8_t reset_pin = 15;
+const uint8_t reset_pin = 17;
 
 AVRISP avrprog(port, reset_pin, 1000000UL / 6);
 
