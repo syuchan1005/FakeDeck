@@ -42,3 +42,5 @@
 #define TFT_MOSI2 11
 #define TFT_SCLK2 10
 #define TOUCH_CS2 13
+#define TOUCH_X p.y, 3700, 250
+#define TOUCH_Y p.x, 450, 3600

@@ -32,6 +32,7 @@ namespace Input
     };
 
 #if !defined(USE_ORIGINAL_TOUCH)
+
     class TFT_Touch : public Touch
     {
     public:
@@ -82,8 +83,8 @@ namespace Input
             if (p.z < threshold)
                 return 0;
 
-            *x = map(p.x, 3940, 220, 0, tft.width());
-            *y = map(p.y, 3870, 310, 0, tft.height());
+            *x = map(TOUCH_X, 0, tft.width());
+            *y = map(TOUCH_Y, 0, tft.height());
             return 1;
         }
 
