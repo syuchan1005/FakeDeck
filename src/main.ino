@@ -254,19 +254,19 @@ void set_report_callback(uint8_t report_id, hid_report_type_t report_type, uint8
             image_type = buffer[0];
             uint16_t x_pos = buffer[1] | (buffer[2] << 8);
             uint16_t y_pos = buffer[3] | (buffer[4] << 8);
-            uint16_t width = buffer[5] | (buffer[6] << 8);
-            uint16_t height = buffer[7] | (buffer[8] << 8);
+            // uint16_t width = buffer[5] | (buffer[6] << 8);
+            // uint16_t height = buffer[7] | (buffer[8] << 8);
             uint8_t is_last = buffer[9];
             uint16_t page_number = buffer[10] | (buffer[11] << 8);
             uint16_t image_length = buffer[12] | (buffer[13] << 8);
-            // padding = buffer[14]testesttestest
+            // padding = buffer[14]
 
             std::copy_n(buffer + 15, image_length, image_buffer + image_buffer_written_len);
             image_buffer_written_len += image_length;
 
             if (is_last)
             {
-                // TODO: draw lcd
+                lcd.draw_touch_image(x_pos, y_pos, image_buffer, image_buffer_written_len);
                 image_buffer_written_len = 0;
             }
         }

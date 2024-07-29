@@ -173,6 +173,22 @@ namespace Input
             tft.drawRoundRect(x - 2, y - 2, KEY_IMAGE_SIZE + 4, KEY_IMAGE_SIZE + 4, 8, TFT_WHITE);
         }
 
+        void draw_touch_image(uint16_t rawX, uint16_t rawY, uint8_t *buffer, uint16_t buffer_size)
+        {
+#if defined(DECK_TOUCH)
+            uint16_t y = rawY + TOUCH_OFFSET_Y(tft.height());
+#if defined(USE_TJPG)
+            TJpgDec.drawJpg(rawX, y, buffer, buffer_size);
+#else
+            if (jpeg.openRAM(buffer, buffer_size, LCD::JPEGDraw))
+            {
+                jpeg.decode(rawX, y, 0);
+                jpeg.close();
+            }
+#endif // USE_TJPG
+#endif // DECK_TOUCH
+        }
+
         /**
          * @brief Get the pressed button index
          *
