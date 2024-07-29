@@ -26,7 +26,7 @@ struct report_packet_t
 };
 
 queue_t brightness_queue;
-queue_t pressed_key_queue;
+queue_t input_event_queue;
 
 void setup()
 {
@@ -44,27 +44,62 @@ void setup()
 
     queue_init(&report_packet_queue, sizeof(report_packet_t), 20);
     queue_init(&brightness_queue, sizeof(uint8_t), 2);
-    queue_init(&pressed_key_queue, sizeof(uint8_t), 2);
+    queue_init(&input_event_queue, sizeof(Input::Event::Event), 4);
 }
 
 // WARNING: We should not use `wait` function (e.g. `delay`) in this function. TinyUSB's tud_task should be called in the loop. And it's needed to be called very frequently.
 void loop()
 {
-    uint8_t pressed_key = Input::NO_KEY_PRESSED;
-    if (queue_try_remove(&pressed_key_queue, &pressed_key))
+    Input::Event::Event event = Input::Event::NONE_OBJ;
+    if (queue_try_remove(&input_event_queue, &event))
     {
-        if (pressed_key != Input::NO_KEY_PRESSED)
+        Serial.printf("Event { type: %d, keyIndex: %d, x: %d, y: %d, x_out: %d, y_out: %d }\n", event.type, event.keyIndex, event.x, event.y, event.x_out, event.y_out);
+        switch (event.type)
         {
-            Serial.printf("Pressed Key: %d\n", pressed_key);
-            uint8_t report[INPUT_REPORT_LEN] = {0, KEY_COUNT, 0};
-            report[pressed_key + 3] = 1;
-            usb_hid.sendReport(1, report, sizeof(report));
-        }
-        else
+        case Input::Event::NONE:
         {
             Serial.println("No Key Pressed");
             uint8_t report[INPUT_REPORT_LEN] = {0, KEY_COUNT, 0};
             usb_hid.sendReport(1, report, sizeof(report));
+            break;
+        }
+        case Input::Event::KEY_PRESSED:
+        {
+            Serial.printf("Pressed Key: %d\n", event.keyIndex);
+            uint8_t report[INPUT_REPORT_LEN] = {0, KEY_COUNT, 0};
+            report[event.keyIndex + 3] = 1;
+            usb_hid.sendReport(1, report, sizeof(report));
+            break;
+        }
+#if defined(DECK_TOUCH)
+        case Input::Event::TOUCH_PRESSED_SHORT:
+        {
+            uint8_t touchReport[INPUT_REPORT_LEN] =
+                {0x02, DIAL_COUNT, 0x00,
+                 0x01, 0x00, U16_TO_U8S_LE(event.x), U16_TO_U8S_LE(event.y), 0x00};
+            usb_hid.sendReport(1, touchReport, sizeof(touchReport));
+            break;
+        }
+        case Input::Event::TOUCH_PRESSED_LONG:
+        {
+            uint8_t touchReport[INPUT_REPORT_LEN] =
+                {0x02, DIAL_COUNT, 0x00,
+                 0x02, 0x00, U16_TO_U8S_LE(event.x), U16_TO_U8S_LE(event.y), 0x00};
+            usb_hid.sendReport(1, touchReport, sizeof(touchReport));
+            break;
+        }
+        case Input::Event::TOUCH_DRAG:
+        {
+            uint8_t touchReport[INPUT_REPORT_LEN] =
+                {0x02, DIAL_COUNT, 0x00,
+                 0x03, 0x00, U16_TO_U8S_LE(event.x), U16_TO_U8S_LE(event.y), U16_TO_U8S_LE(event.x_out), U16_TO_U8S_LE(event.y_out), 0x00};
+            usb_hid.sendReport(1, touchReport, sizeof(touchReport));
+            break;
+        }
+#endif
+        default:
+            Serial.printf("Unknown Event: %d\n", event.type);
+            break;
         }
     }
 }
@@ -90,27 +125,28 @@ void loop1()
         lcd.set_brightness(brightness);
     }
 
-    maybe_send_pressed_key();
+    maybe_send_event();
 }
 
-uint8_t previous_pressed_key = Input::NO_KEY_PRESSED;
-uint32_t previous_executed_millis = 0;
-void maybe_send_pressed_key()
+Input::Event::Event previous_event = Input::Event::NONE_OBJ;
+uint32_t previous_executed_event_millis = 0;
+void maybe_send_event()
 {
     uint32_t current_millis = millis();
-    if (current_millis - previous_executed_millis < 10)
+    if (current_millis - previous_executed_event_millis < 10)
     {
         return;
     }
-    previous_executed_millis = current_millis;
-
-    uint8_t pressed_key = lcd.get_pressed_button();
-    bool shouldSendPressedReport = false;
-    if (pressed_key != previous_pressed_key)
+    previous_executed_event_millis = current_millis;
+    Input::Event::Event event = lcd.get_event();
+    if (previous_event.type != event.type)
     {
-        queue_add_blocking(&pressed_key_queue, &pressed_key);
+        queue_add_blocking(&input_event_queue, &event);
+        if (event.type == Input::Event::EventType::KEY_PRESSED)
+            previous_event = event;
+        else
+            previous_event = Input::Event::NONE_OBJ;
     }
-    previous_pressed_key = pressed_key;
 }
 
 uint16_t get_report_callback(uint8_t report_id, hid_report_type_t report_type, uint8_t *buffer, uint16_t reqlen)

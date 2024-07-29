@@ -96,6 +96,41 @@ namespace Input
 #endif
 
     const uint8_t NO_KEY_PRESSED = 0x80;
+    const uint16_t TOUCH_TAP_THRESHOLD_PX = 100;
+    const uint32_t TOUCH_LONG_TAP_THRESHOLD_MS = 500;
+
+    namespace Event
+    {
+        enum EventType
+        {
+            NONE,
+            KEY_PRESSED,
+            TOUCH_PRESSED_SHORT,
+            TOUCH_PRESSED_LONG,
+            TOUCH_DRAG
+        };
+
+        class Event
+        {
+        public:
+            Event(
+                EventType type,
+                int8_t keyIndex = -1,
+                int16_t x = -1,
+                int16_t y = -1,
+                int16_t x_out = -1,
+                int16_t y_out = -1) : type(type), keyIndex(keyIndex), x(x), y(y), x_out(x_out), y_out(y_out) {}
+
+            EventType type;
+            uint8_t keyIndex;
+            uint16_t x;
+            uint16_t y;
+            uint16_t x_out;
+            uint16_t y_out;
+        };
+
+        Event NONE_OBJ = Event(EventType::NONE);
+    };
 
     class LCD
     {
@@ -225,6 +260,75 @@ namespace Input
                 }
             }
             return NO_KEY_PRESSED;
+        }
+
+        int16_t touch_start_x = -1;
+        int16_t touch_start_y = -1;
+        uint32_t touch_start_ms = 0;
+        int16_t previous_x = -1;
+        int16_t previous_y = -1;
+        /**
+         * @brief Gets the event from the LCD.
+         *
+         * @return Event::Event
+         */
+        Event::Event get_event()
+        {
+#if defined(DECK_TOUCH)
+            uint16_t x, y;
+            uint8_t is_touched = touch->getTouch(&x, &y, 600);
+            if (!is_touched)
+            {
+                Event::Event event = Event::NONE_OBJ;
+                if (touch_start_x != -1)
+                {
+                    uint16_t distance = sqrt(pow(touch_start_x - previous_x, 2) + pow(touch_start_y - previous_y, 2));
+                    uint32_t touch_duration = millis() - touch_start_ms;
+                    if (distance > TOUCH_TAP_THRESHOLD_PX)
+                    {
+                        if (previous_x != -1 && previous_y != -1)
+                        {
+                            event = Event::Event(Event::EventType::TOUCH_DRAG, -1, touch_start_x, TOUCH_NORMALIZED_Y(tft.height(), touch_start_y), previous_x, TOUCH_NORMALIZED_Y(tft.height(), previous_y));
+                        }
+                    }
+                    else if (touch_duration < TOUCH_LONG_TAP_THRESHOLD_MS)
+                    {
+                        event = Event::Event(Event::EventType::TOUCH_PRESSED_SHORT, -1, touch_start_x, TOUCH_NORMALIZED_Y(tft.height(), touch_start_y));
+                    }
+                    else
+                    {
+                        event = Event::Event(Event::EventType::TOUCH_PRESSED_LONG, -1, touch_start_x, TOUCH_NORMALIZED_Y(tft.height(), touch_start_y));
+                    }
+                }
+
+                touch_start_x = -1;
+                touch_start_y = -1;
+                previous_x = -1;
+                previous_y = -1;
+                return event;
+            }
+
+            previous_x = x;
+            previous_y = y;
+
+            if (y > TOUCH_OFFSET_Y(tft.height()))
+            {
+                if (touch_start_x == -1)
+                {
+                    touch_start_x = x;
+                    touch_start_y = y;
+                    touch_start_ms = millis();
+                }
+                return Event::NONE_OBJ;
+            }
+
+#endif // DECK_TOUCH
+            uint8_t pressedButton = get_pressed_button();
+            if (pressedButton != NO_KEY_PRESSED)
+            {
+                return Event::Event(Event::EventType::KEY_PRESSED, pressedButton);
+            }
+            return Event::NONE_OBJ;
         }
 
         /**

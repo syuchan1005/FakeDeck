@@ -49,6 +49,7 @@
 #define KEY_OFFSET_X(w) KEY_H_GAP(w)
 #define KEY_OFFSET_Y(h) (KEY_V_GAP(h) / 2)
 #define TOUCH_OFFSET_Y(h) h - TOUCHSCREEN_PIXEL_HEIGHT
+#define TOUCH_NORMALIZED_Y(h, y) map(y, TOUCH_OFFSET_Y(h), h, 0, TOUCHSCREEN_PIXEL_HEIGHT)
 
 #else
 #error "Invalid DECK value"
