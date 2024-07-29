@@ -10,6 +10,8 @@
 
 #define TFT_RGB_ORDER TFT_RGB
 
+#define TFT_ROTATION 3
+
 // #define TFT_CS // to GND
 // #define TFT_RD // to 3V3
 #define TFT_DC 16

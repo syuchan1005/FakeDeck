@@ -32,7 +32,6 @@ namespace Input
     };
 
 #if !defined(USE_ORIGINAL_TOUCH)
-
     class TFT_Touch : public Touch
     {
     public:
@@ -108,7 +107,7 @@ namespace Input
             TJpgDec.setCallback(LCD::draw_image_callback);
 #endif
             tft.init();
-            tft.setRotation(1);
+            tft.setRotation(TFT_ROTATION);
             tft.fillScreen(TFT_BLACK);
 
             pinMode(TFT_LED, OUTPUT);
@@ -153,11 +152,13 @@ namespace Input
 
         void draw_key_image(uint8_t key_index, uint8_t *buffer, uint16_t buffer_size)
         {
+#if defined(KEY_ORDER_REVERSE)
             uint8_t lcd_key_index = KEY_COUNT - key_index - 1;
-            int16_t x_spacing = (tft.width() - KEY_IMAGE_SIZE * KEY_COUNT_COL) / (KEY_COUNT_COL + 1);
-            int16_t x = x_spacing + (KEY_IMAGE_SIZE + x_spacing) * (lcd_key_index % KEY_COUNT_COL);
-            int16_t y_spacing = (tft.height() - KEY_IMAGE_SIZE * KEY_COUNT_ROW) / (KEY_COUNT_ROW + 1);
-            int16_t y = y_spacing + (KEY_IMAGE_SIZE + y_spacing) * (lcd_key_index / KEY_COUNT_COL);
+#else
+            uint8_t lcd_key_index = key_index;
+#endif
+            int16_t x = KEY_X(tft.width(), lcd_key_index);
+            int16_t y = KEY_Y(tft.height(), lcd_key_index);
 
 #if defined(USE_TJPG)
             TJpgDec.drawJpg(x, y, buffer, buffer_size);
@@ -191,17 +192,19 @@ namespace Input
                 tft.drawPixel(x, y, TFT_RED);
 #endif
 
-                int16_t x_spacing = (tft.width() - KEY_IMAGE_SIZE * KEY_COUNT_COL) / (KEY_COUNT_COL + 1);
-                int16_t y_spacing = (tft.height() - KEY_IMAGE_SIZE * KEY_COUNT_ROW) / (KEY_COUNT_ROW + 1);
                 for (uint8_t i = 0; i < KEY_COUNT; i++)
                 {
-                    int16_t x_start = x_spacing + (KEY_IMAGE_SIZE + x_spacing) * (i % KEY_COUNT_COL);
+                    int16_t x_start = KEY_X(tft.width(), i);
+                    int16_t y_start = KEY_Y(tft.height(), i);
                     int16_t x_end = x_start + KEY_IMAGE_SIZE;
-                    int16_t y_start = y_spacing + (KEY_IMAGE_SIZE + y_spacing) * (i / KEY_COUNT_COL);
                     int16_t y_end = y_start + KEY_IMAGE_SIZE;
                     if (x >= x_start && x < x_end && y >= y_start && y < y_end)
                     {
+#if defined(KEY_ORDER_REVERSE)
                         return KEY_COUNT - i - 1;
+#else
+                        return i;
+#endif
                     }
                 }
             }
