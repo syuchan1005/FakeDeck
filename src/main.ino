@@ -3,12 +3,14 @@
 #include <Adafruit_TinyUSB.h>
 #include "./usb_descriptors.hpp"
 #include "./input/LCD.hpp"
+#include "./input/Encoder.hpp"
 #include "./FileRepository.hpp"
 
 Adafruit_USBD_HID usb_hid;
 uint8_t const desc_hid_report[] = {TUD_HID_REPORT_DESC()};
 
 Input::Display::LCD lcd;
+Input::Encoder::Encoder encoder;
 FileRepository file_repository;
 
 // 6.2.0.18816
@@ -26,7 +28,8 @@ struct report_packet_t
 };
 
 queue_t brightness_queue;
-queue_t input_event_queue;
+queue_t display_event_queue;
+queue_t encoder_event_queue;
 
 void setup()
 {
@@ -44,14 +47,15 @@ void setup()
 
     queue_init(&report_packet_queue, sizeof(report_packet_t), 20);
     queue_init(&brightness_queue, sizeof(uint8_t), 2);
-    queue_init(&input_event_queue, sizeof(Input::Display::Event::Event), 4);
+    queue_init(&display_event_queue, sizeof(Input::Display::Event::Event), 4);
+    queue_init(&encoder_event_queue, sizeof(Input::Encoder::Event::Event), 4);
 }
 
 // WARNING: We should not use `wait` function (e.g. `delay`) in this function. TinyUSB's tud_task should be called in the loop. And it's needed to be called very frequently.
 void loop()
 {
     Input::Display::Event::Event event = Input::Display::Event::NONE_OBJ;
-    if (queue_try_remove(&input_event_queue, &event))
+    if (queue_try_remove(&display_event_queue, &event))
     {
         Serial.printf("Event { type: %d, keyIndex: %d, x: %d, y: %d, x_out: %d, y_out: %d }\n", event.type, event.keyIndex, event.x, event.y, event.x_out, event.y_out);
         switch (event.type)
@@ -98,9 +102,83 @@ void loop()
         }
 #endif
         default:
-            Serial.printf("Unknown Event: %d\n", event.type);
+            Serial.printf("Unknown Display Event: %d\n", event.type);
             break;
         }
+    }
+#if defined(DECK_TOUCH)
+    Input::Encoder::Event::Event encoderEvent = Input::Encoder::Event::Event(Input::Encoder::Event::EventType::NONE, 0);
+    if (queue_try_remove(&encoder_event_queue, &encoderEvent))
+    {
+        Serial.printf("Encoder Event { type: %d, value: ", encoderEvent.type);
+        Serial.print(encoderEvent.value, BIN);
+        Serial.println(" }");
+        switch (encoderEvent.type)
+        {
+        case Input::Encoder::Event::EventType::TURN:
+        {
+            uint8_t report[INPUT_REPORT_LEN] =
+                {0x03, DIAL_COUNT + 1, 0x00,
+                 0x01,
+                 (uint8_t)make_encoder_turn_report(encoderEvent.value),
+                 (uint8_t)make_encoder_turn_report(encoderEvent.value >> 2),
+                 (uint8_t)make_encoder_turn_report(encoderEvent.value >> 4),
+                 (uint8_t)make_encoder_turn_report(encoderEvent.value >> 6),
+                 0x00};
+            usb_hid.sendReport(1, report, sizeof(report));
+            break;
+        }
+        case Input::Encoder::Event::EventType::PRESS:
+        {
+            uint8_t report[INPUT_REPORT_LEN] =
+                {0x03, DIAL_COUNT + 1, 0x00,
+                0x00,
+                encoderEvent.value & 1,
+                encoderEvent.value & (1 << 1),
+                encoderEvent.value & (1 << 2),
+                encoderEvent.value & (1 << 3),
+                0x00};
+            Serial.print("report:");
+            for (int i = 0; i < INPUT_REPORT_LEN; i++)
+            {
+                Serial.print(report[i], HEX);
+                Serial.print(" ");
+            }
+            Serial.println();
+
+            usb_hid.sendReport(1, report, sizeof(report));
+            break;
+        }
+
+        default:
+            Serial.printf("Unknown Encoder Event: %d\n", encoderEvent.type);
+            break;
+        }
+    }
+#endif
+}
+
+uint8_t reverse(uint8_t num)
+{
+    uint8_t reverse_num = 0;
+    for (uint8_t i = 0; i < 8; i++) {
+        if ((num & (1 << i)))
+            reverse_num |= 1 << (7 - i);
+    }
+    return reverse_num;
+}
+
+int8_t make_encoder_turn_report(uint8_t turn)
+{
+    switch (turn & 0x03)
+    {
+    case 1:
+        return -1; // turn left
+    case 2:
+        return 1; // turn right
+    default:
+    case 3:
+        return 0; // no turn
     }
 }
 
@@ -109,6 +187,8 @@ void setup1()
     lcd.init();
     file_repository.init();
     lcd.calibrate(file_repository);
+
+    encoder.init();
 }
 
 void loop1()
@@ -141,12 +221,31 @@ void maybe_send_event()
     Input::Display::Event::Event event = lcd.get_event();
     if (previous_event.type != event.type)
     {
-        queue_add_blocking(&input_event_queue, &event);
+        queue_add_blocking(&display_event_queue, &event);
         if (event.type == Input::Display::Event::EventType::KEY_PRESSED)
             previous_event = event;
         else
             previous_event = Input::Display::Event::NONE_OBJ;
     }
+
+    maybe_send_encoder_event();
+}
+
+Input::Encoder::Event::EventDataHolder previous_encoder_event_data_holder = Input::Encoder::Event::EventDataHolder(0, 0);
+void maybe_send_encoder_event()
+{
+    Input::Encoder::Event::EventDataHolder eventDataHolder = encoder.get_event();
+    if (previous_encoder_event_data_holder.turn != eventDataHolder.turn)
+    {
+        Input::Encoder::Event::Event event = Input::Encoder::Event::Event(Input::Encoder::Event::EventType::TURN, eventDataHolder.turn);
+        queue_add_blocking(&encoder_event_queue, &event);
+    }
+    if (previous_encoder_event_data_holder.press != eventDataHolder.press)
+    {
+        Input::Encoder::Event::Event event = Input::Encoder::Event::Event(Input::Encoder::Event::EventType::PRESS, eventDataHolder.press);
+        queue_add_blocking(&encoder_event_queue, &event);
+    }
+    previous_encoder_event_data_holder = eventDataHolder;
 }
 
 uint16_t get_report_callback(uint8_t report_id, hid_report_type_t report_type, uint8_t *buffer, uint16_t reqlen)

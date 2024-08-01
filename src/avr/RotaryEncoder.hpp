@@ -55,18 +55,19 @@ void initRotaryEncoders()
 }
 
 void createRotaryEncoderData(
-    uint8_t offset,
+    uint8_t index,
     uint16_t rePinDataReg, uint8_t aPin, uint8_t bPin,
     uint16_t reSPinDataReg, uint8_t sPin,
     uint16_t *data, uint16_t *oldData, uint16_t *sendData)
 {
+    uint8_t offset = index * 2;
     // read pin data
     if (rePinDataReg & (1 << aPin))
         *data |= 1 << (0 + offset);
     if (rePinDataReg & (1 << bPin))
         *data |= 1 << (1 + offset);
     if (~reSPinDataReg & (1 << sPin))
-        *sendData |= 1 << (2 + offset);
+        *sendData |= 1 << (8 + index);
 
     // old A and old B are both high
     if ((*oldData & (3 << offset)) == (3U << offset))
