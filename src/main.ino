@@ -8,7 +8,7 @@
 Adafruit_USBD_HID usb_hid;
 uint8_t const desc_hid_report[] = {TUD_HID_REPORT_DESC()};
 
-Input::LCD lcd;
+Input::Display::LCD lcd;
 FileRepository file_repository;
 
 // 6.2.0.18816
@@ -44,26 +44,26 @@ void setup()
 
     queue_init(&report_packet_queue, sizeof(report_packet_t), 20);
     queue_init(&brightness_queue, sizeof(uint8_t), 2);
-    queue_init(&input_event_queue, sizeof(Input::Event::Event), 4);
+    queue_init(&input_event_queue, sizeof(Input::Display::Event::Event), 4);
 }
 
 // WARNING: We should not use `wait` function (e.g. `delay`) in this function. TinyUSB's tud_task should be called in the loop. And it's needed to be called very frequently.
 void loop()
 {
-    Input::Event::Event event = Input::Event::NONE_OBJ;
+    Input::Display::Event::Event event = Input::Display::Event::NONE_OBJ;
     if (queue_try_remove(&input_event_queue, &event))
     {
         Serial.printf("Event { type: %d, keyIndex: %d, x: %d, y: %d, x_out: %d, y_out: %d }\n", event.type, event.keyIndex, event.x, event.y, event.x_out, event.y_out);
         switch (event.type)
         {
-        case Input::Event::NONE:
+        case Input::Display::Event::NONE:
         {
             Serial.println("No Key Pressed");
             uint8_t report[INPUT_REPORT_LEN] = {0, KEY_COUNT, 0};
             usb_hid.sendReport(1, report, sizeof(report));
             break;
         }
-        case Input::Event::KEY_PRESSED:
+        case Input::Display::Event::KEY_PRESSED:
         {
             Serial.printf("Pressed Key: %d\n", event.keyIndex);
             uint8_t report[INPUT_REPORT_LEN] = {0, KEY_COUNT, 0};
@@ -72,7 +72,7 @@ void loop()
             break;
         }
 #if defined(DECK_TOUCH)
-        case Input::Event::TOUCH_PRESSED_SHORT:
+        case Input::Display::Event::TOUCH_PRESSED_SHORT:
         {
             uint8_t touchReport[INPUT_REPORT_LEN] =
                 {0x02, DIAL_COUNT, 0x00,
@@ -80,7 +80,7 @@ void loop()
             usb_hid.sendReport(1, touchReport, sizeof(touchReport));
             break;
         }
-        case Input::Event::TOUCH_PRESSED_LONG:
+        case Input::Display::Event::TOUCH_PRESSED_LONG:
         {
             uint8_t touchReport[INPUT_REPORT_LEN] =
                 {0x02, DIAL_COUNT, 0x00,
@@ -88,7 +88,7 @@ void loop()
             usb_hid.sendReport(1, touchReport, sizeof(touchReport));
             break;
         }
-        case Input::Event::TOUCH_DRAG:
+        case Input::Display::Event::TOUCH_DRAG:
         {
             uint8_t touchReport[INPUT_REPORT_LEN] =
                 {0x02, DIAL_COUNT, 0x00,
@@ -128,7 +128,7 @@ void loop1()
     maybe_send_event();
 }
 
-Input::Event::Event previous_event = Input::Event::NONE_OBJ;
+Input::Display::Event::Event previous_event = Input::Display::Event::NONE_OBJ;
 uint32_t previous_executed_event_millis = 0;
 void maybe_send_event()
 {
@@ -138,14 +138,14 @@ void maybe_send_event()
         return;
     }
     previous_executed_event_millis = current_millis;
-    Input::Event::Event event = lcd.get_event();
+    Input::Display::Event::Event event = lcd.get_event();
     if (previous_event.type != event.type)
     {
         queue_add_blocking(&input_event_queue, &event);
-        if (event.type == Input::Event::EventType::KEY_PRESSED)
+        if (event.type == Input::Display::Event::EventType::KEY_PRESSED)
             previous_event = event;
         else
-            previous_event = Input::Event::NONE_OBJ;
+            previous_event = Input::Display::Event::NONE_OBJ;
     }
 }
 
