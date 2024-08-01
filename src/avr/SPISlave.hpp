@@ -92,7 +92,7 @@ ISR(USI_OVERFLOW_vect)
         sendData = sendData & 0xFF00;
     } else {
         // send upper 8bit from data
-        USIDR = (sendData & 0xFF00) >> 8;
+        USIDR = (sendData & 0xFF00 | 0x8000) >> 8;
         sendData = sendData & 0x00FF;
     }
 }

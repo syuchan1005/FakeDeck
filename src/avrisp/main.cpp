@@ -4,9 +4,9 @@
 #include <Wire.h>
 
 #if !defined(WIFI_SSID) || !defined(WIFI_PW)
-  #warning "Please define WIFI_SSID and WIFI_PW in your config"
-  #define WIFI_SSID "your-ssid"
-  #define WIFI_PW "your-password"
+#warning "Please define WIFI_SSID and WIFI_PW in your config"
+#define WIFI_SSID "your-ssid"
+#define WIFI_PW "your-password"
 #endif
 
 const uint16_t port = 328;
@@ -24,12 +24,21 @@ void setup()
   avrprog.setReset(false); // let the AVR run
 
   WiFi.mode(WIFI_STA);
-  WiFi.begin(WIFI_SSID, WIFI_PW);
-  Serial.println("Connecting to WiFi");
-  while (WiFi.status() != WL_CONNECTED)
+  while (1)
   {
-    delay(1000);
-    Serial.print(".");
+    WiFi.begin(WIFI_SSID, WIFI_PW);
+    Serial.println("Connecting to WiFi");
+    for (int i = 0; i < 30 && WiFi.status() != WL_CONNECTED; i++)
+    {
+      delay(1000);
+      Serial.print(".");
+    }
+    if (WiFi.status() == WL_CONNECTED)
+    {
+      break;
+    }
+    WiFi.end();
+    delay(5000);
   }
 
   IPAddress local_ip = WiFi.localIP();
@@ -46,8 +55,10 @@ void setup()
   avrprog.begin();
 }
 
+#if defined(DEBUG_SPI)
 bool isInited = false;
 uint32_t latestMillis = 0;
+#endif
 
 void loop()
 {
@@ -61,20 +72,24 @@ void loop()
     {
       Serial.printf("[AVRISP] now idle\r\n");
       // Use the SPI bus for other purposes
+#if defined(DEBUG_SPI)
       if (!isInited)
       {
         SPI.begin();
-        SPI.beginTransaction(SPISettings(1000000UL/6, MSBFIRST, SPI_MODE0));
+        SPI.beginTransaction(SPISettings(8000000UL / 8 / 16, MSBFIRST, SPI_MODE0));
         isInited = true;
       }
+#endif
       break;
     }
     case AVRISP_STATE_PENDING:
     {
       Serial.printf("[AVRISP] connection pending\r\n");
       // Clean up your other purposes and prepare for programming mode
+#if defined(DEBUG_SPI)
       SPI.end();
       isInited = false;
+#endif
       break;
     }
     case AVRISP_STATE_ACTIVE:
@@ -87,19 +102,28 @@ void loop()
     last_state = new_state;
   }
 
-  if (isInited && millis() - latestMillis > 500)
+#if defined(DEBUG_SPI)
+  if (isInited && millis() - latestMillis > 10)
   {
     latestMillis = millis();
+    uint32_t start = micros();
     SPI.transfer(0);
-    uint8_t lowerRxbuf = SPI.transfer(1);
-    uint8_t upperRxbuf = SPI.transfer(0);
+    uint8_t lowerRxbuf = SPI.transfer(0);
+    SPI.transfer(1);
+    uint8_t upperRxbuf = SPI.transfer(1);
     uint16_t rxbuf = (upperRxbuf << 8) | lowerRxbuf;
-    if (rxbuf != 0)
+    if (rxbuf > 0x8000)
     {
-      Serial.printf("Received: ");
+      Serial.printf("Received(%03d[us]): ", micros() - start);
+      Serial.println(rxbuf, BIN);
+    }
+    else if (rxbuf != 0x8000)
+    {
+      Serial.printf("Received invalid data(%03d[us]): ", micros() - start);
       Serial.println(rxbuf, BIN);
     }
   }
+#endif
 
   // Serve the client
   if (last_state != AVRISP_STATE_IDLE)
