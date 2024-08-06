@@ -4,7 +4,7 @@ Using raspberry pi pico as a stream deck
 ## Avaiable devices
 
 |Mk2|Plus|
-|:--:|:--|
+|:--:|:--:|
 |![](./assets/Mk2/example.jpg)|![](./assets/Plus/example.jpg)|
 
 ## How to create : StreamDeck Mk.2
