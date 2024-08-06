@@ -1,10 +1,10 @@
 #ifndef DECK_CONFIG_HPP
 #define DECK_CONFIG_HPP
 
-#define ORIGINAL_V2 1
+#define ORIGINAL_MK2 1
 #define PLUS 2
 
-#if DECK == ORIGINAL_V2
+#if DECK == ORIGINAL_MK2
 
 #define DECK_USB_PID 0x006d
 #define DECK_USB_PRODUCT "Streamdeck"
