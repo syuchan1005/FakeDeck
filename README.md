@@ -1,16 +1,15 @@
 # Fakedeck
 Using raspberry pi pico as a stream deck
 
-![](./assets/Mk2/example.jpg)
-
-
 ## Avaiable devices
-- Stream deck v2
-- WIP: Stream deck Plus
 
-## How to create : StreamDeck Mk.2
+|Mk2|Plus|
+|:--:|:--|
+|![](./assets/Mk2/example.jpg)|![](./assets/Plus/example.jpg)|
+
+## How to create : StreamDeck Mk.2 {#mk2}
 ### Parts
-- Raspberry Pi Pico
+- Raspberry Pi Pico W
 - ILI9488 TFT with Touch: [AliExpress](https://www.aliexpress.com/item/32985467436.html)
 > [!IMPORTANT]
 > Make sure to select "touch screen"
