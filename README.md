@@ -1,10 +1,10 @@
 # Fakedeck
 Using raspberry pi pico as a stream deck
 
-![](./assets/example.jpg)
+![](./assets/Mk2/example.jpg)
 
 
-## Avaiable devices - Can be modified from [src/deck_config.hpp](src/deck_config.hpp)
+## Avaiable devices
 - Stream deck v2
 - WIP: Stream deck Plus
 
@@ -15,12 +15,12 @@ Using raspberry pi pico as a stream deck
 > [!IMPORTANT]
 > Make sure to select "touch screen"
 - Solder, wire, etc.
-- 3D printers for creating a case - [Top](./assets/Case%20-%20Top.stl), [Bottom](./assets/Case%20-%20Bottom.stl)
+- 3D printers for creating a case - [Top](./assets/Mk2/Case%20-%20Top.stl), [Bottom](./assets/Mk2/Case%20-%20Bottom.stl)
 - M3 x 6mm screw *4
 
 ### Wire
-![wire](./assets/wire.jpg)
-![wire example](./assets/wire_example.jpg)
+![wire](./assets/Mk2/wire.jpg)
+![wire example](./assets/Mk2/wire_example.jpg)
 
 > [!NOTE]
 > LCD uses 90 mA. 
@@ -34,7 +34,7 @@ Using raspberry pi pico as a stream deck
 ## How to create : StreamDeck+ - WIP!
 
 ### Wire
-![wire_plus](./assets/wire_plus.jpg)
+![wire_plus](./assets/Plus/wire.jpg)
 
 ### projects
 
