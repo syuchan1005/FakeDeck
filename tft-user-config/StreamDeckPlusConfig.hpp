@@ -46,3 +46,4 @@
 #define TOUCH_CS2 13
 #define TOUCH_X p.y, 3700, 250
 #define TOUCH_Y p.x, 450, 3600
+#define TOUCH_THRESHOLD 400

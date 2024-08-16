@@ -230,11 +230,11 @@ namespace Input
              * @brief Get the pressed button index
              *
              * @return uint8_t if no button is pressed, returns [NO_KEY_PRESSED].
-             */
+             */ 
             uint8_t get_pressed_button()
             {
                 uint16_t x, y;
-                uint8_t isTouched = touch->getTouch(&x, &y, 600);
+                uint8_t isTouched = touch->getTouch(&x, &y, TOUCH_THRESHOLD);
                 if (isTouched)
                 {
 #ifdef DEBUG_TOUCH
