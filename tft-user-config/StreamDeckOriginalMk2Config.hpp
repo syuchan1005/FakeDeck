@@ -2,6 +2,7 @@
  * TFT configuration for the StreamDeckOriginalV2
  */
 
+#if !defined(USER_SETUP_LOADED)
 #define USER_SETUP_LOADED
 
 #define ILI9488_DRIVER
@@ -37,3 +38,5 @@
 #define TOUCH_X p.x, 3940, 220
 #define TOUCH_Y p.y, 3870, 310
 #define TOUCH_THRESHOLD 600
+
+#endif // USER_SETUP_LOADED

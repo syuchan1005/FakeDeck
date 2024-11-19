@@ -6,6 +6,9 @@
 
 #if DECK == ORIGINAL_MK2
 
+// This is workaround for the platformio "-include" build flag
+#include "../tft-user-config/StreamDeckOriginalMk2Config.hpp"
+
 #define DECK_USB_PID 0x006d
 #define DECK_USB_PRODUCT "Streamdeck"
 
@@ -28,6 +31,9 @@
 #define KEY_OFFSET_Y(h) KEY_V_GAP(h)
 
 #elif DECK == PLUS
+
+// This is workaround for the platformio "-include" build flag
+#include "../tft-user-config/StreamDeckPlusConfig.hpp"
 
 #define DECK_USB_PID 0x0084
 #define DECK_USB_PRODUCT "Streamdeck +"

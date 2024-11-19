@@ -2,6 +2,7 @@
  * TFT configuration for the StreamDeckPlus
  */
 
+#if !defined(USER_SETUP_LOADED)
 #define USER_SETUP_LOADED
 
 #define TFT_PARALLEL_8_BIT
@@ -47,3 +48,4 @@
 #define TOUCH_X p.y, 3700, 250
 #define TOUCH_Y p.x, 450, 3600
 #define TOUCH_THRESHOLD 400
+#endif // USER_SETUP_LOADED

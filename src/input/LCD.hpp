@@ -5,6 +5,7 @@
 #include <TFT_eSPI.h>
 #include <JPEGDEC.h>
 #include <XPT2046_Touchscreen.h>
+#include "../deck_config.hpp"
 #include "../usb_descriptors.hpp"
 #include "../FileRepository.hpp"
 

@@ -132,12 +132,12 @@ void loop()
         {
             uint8_t report[INPUT_REPORT_LEN] =
                 {0x03, DIAL_COUNT + 1, 0x00,
-                0x00,
-                encoderEvent.value & 1,
-                encoderEvent.value & (1 << 1),
-                encoderEvent.value & (1 << 2),
-                encoderEvent.value & (1 << 3),
-                0x00};
+                 0x00,
+                 encoderEvent.value & 1,
+                 encoderEvent.value & (1 << 1),
+                 encoderEvent.value & (1 << 2),
+                 encoderEvent.value & (1 << 3),
+                 0x00};
             Serial.print("report:");
             for (int i = 0; i < INPUT_REPORT_LEN; i++)
             {
@@ -161,7 +161,8 @@ void loop()
 uint8_t reverse(uint8_t num)
 {
     uint8_t reverse_num = 0;
-    for (uint8_t i = 0; i < 8; i++) {
+    for (uint8_t i = 0; i < 8; i++)
+    {
         if ((num & (1 << i)))
             reverse_num |= 1 << (7 - i);
     }
@@ -373,8 +374,15 @@ void set_report_callback(uint8_t report_id, hid_report_type_t report_type, uint8
             uint16_t image_length = buffer[3] | (buffer[4] << 8);
             uint16_t page_number = buffer[5] | (buffer[6] << 8);
 
-            std::copy_n(buffer + 7, image_length, image_buffer + image_buffer_written_len);
-            image_buffer_written_len += image_length;
+            if (image_buffer_written_len + image_length <= MAX_IMAGE_SIZE_BYTES)
+            {
+                std::copy_n(buffer + 7, image_length, image_buffer + image_buffer_written_len);
+                image_buffer_written_len += image_length;
+            }
+            else
+            {
+                Input::Display::tft.fillRect(0, 0, 50, 50, TFT_RED);
+            }
 
             if (is_last)
             {
@@ -396,8 +404,15 @@ void set_report_callback(uint8_t report_id, hid_report_type_t report_type, uint8
             uint16_t image_length = buffer[12] | (buffer[13] << 8);
             // padding = buffer[14]
 
-            std::copy_n(buffer + 15, image_length, image_buffer + image_buffer_written_len);
-            image_buffer_written_len += image_length;
+            if (image_buffer_written_len + image_length <= MAX_IMAGE_SIZE_BYTES)
+            {
+                std::copy_n(buffer + 15, image_length, image_buffer + image_buffer_written_len);
+                image_buffer_written_len += image_length;
+            }
+            else
+            {
+                Input::Display::tft.fillRect(0, 50, 50, 50, TFT_GREEN);
+            }
 
             if (is_last)
             {
