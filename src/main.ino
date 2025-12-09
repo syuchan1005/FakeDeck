@@ -283,37 +283,41 @@ uint16_t output_report_written_len = 0;
 // Invoked when received SET_REPORT control request or received data on OUT endpoint ( Report ID = 0, Type = 0 )
 void pre_set_report_callback(uint8_t report_id, hid_report_type_t report_type, uint8_t const *buffer, uint16_t bufsize)
 {
-    char str[110];
+    char str[150];
     sprintf(
         str,
-        "SET Report Type: %d, Report ID: %d, len: %d, outputlen: %04d, buf: [%02X, %02X, ...]",
+        "SET Report Type: %d, Report ID: %d, len: %d, outputlen: %04d, buf: [%02X, %02X, %02X, %02X, %02X, %02X, ...]",
         report_type, report_id, bufsize, output_report_written_len,
-        buffer[0], buffer[1]);
+        buffer[0], buffer[1], buffer[2], buffer[3], buffer[4], buffer[5]);
     Serial.println(str);
 
-    if (report_type == HID_REPORT_TYPE_INVALID && report_id == 0 &&
+    // Handle OUTPUT report
+    // When report_type == OUTPUT (2) with report_id == 0, buffer[0] contains the actual report ID
+    if (report_type == HID_REPORT_TYPE_OUTPUT && report_id == 0 &&
         (buffer[0] == OUTPUT_REPORT_ID || output_report_written_len > 0))
     {
         if (output_report_written_len == 0)
         {
+            // First packet: buffer[0] is report ID, buffer[1] is command
             output_report_id = buffer[0];
             std::copy_n(buffer + 1, bufsize - 1, output_report_buffer);
             output_report_written_len = bufsize - 1;
+            Serial.printf("OUTPUT START: id=%02X, cmd=%02X, len=%d\n", output_report_id, buffer[1], bufsize - 1);
         }
         else
         {
+            // Continuation packet: all data
             std::copy_n(buffer, bufsize, output_report_buffer + output_report_written_len);
             output_report_written_len += bufsize;
+            Serial.printf("OUTPUT CONT: total=%d\n", output_report_written_len);
         }
 
-        if (output_report_written_len < OUTPUT_REPORT_LEN)
+        if (output_report_written_len >= OUTPUT_REPORT_LEN)
         {
-            // report data is not complete yet
-            return;
+            Serial.printf("OUTPUT COMPLETE: %d bytes, cmd=%02X\n", output_report_written_len, output_report_buffer[0]);
+            emit_report_packet(output_report_id, HID_REPORT_TYPE_OUTPUT, output_report_buffer, output_report_written_len);
+            output_report_written_len = 0;
         }
-
-        emit_report_packet(output_report_id, HID_REPORT_TYPE_OUTPUT, output_report_buffer, output_report_written_len);
-        output_report_written_len = 0;
         return;
     }
 
