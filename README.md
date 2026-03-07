@@ -34,7 +34,6 @@ Using raspberry pi pico as a stream deck
 ## How to create : StreamDeck+
 ### Parts
 - Raspberry Pi Pico W
-- ATtiny2313
 - SSD1963 TFT with Touch: [AliExpress](https://www.aliexpress.com/item/1005006305412643.html)
 > [!IMPORTANT]
 > Make sure to select "resistive touch"
@@ -42,20 +41,22 @@ Using raspberry pi pico as a stream deck
 - Stripboard(approx. 120 x 90 (mm)) or Order PCB
 - 3D printers for creating a case - [Top](./assets/Plus/Case%20-%20Top.stl), [Bottom body](./assets/Plus/Case%20-%20Bottom%20body.stl), [Bottom base](./assets/Plus/Case%20-%20Bottom%20base.stl), [Bottom bridge](./assets/Plus/Case%20-%20Bottom%20bridge.stl)
 - M3 x 6mm screw *4
+- Resistors: 47Ω, 120Ω, 220Ω, 470Ω, 1kΩ
+
+> These resistors are used in the switch's ladder circuit. Any other value is acceptable as long as it is a constant multiple of the specified resistance. If using resistors other than these, modify `SW_PATTERNS` in [Encoder.hpp](./src/input/Encoder.hpp).
 
 ### Wire
-![wire_plus](./assets/Plus/wire.jpg)
+![wire_plus](./assets/Plus/wire.svg)
 |Front|Back|
 |:--:|:--:|
 |![wire_plus example_front](./assets/Plus/wire_example_front.jpg)|![wire_plus example_back](./assets/Plus/wire_example_back.jpg)|
 
-> [!CAUTION]
-> The SDCard slot on the screen interferes with the ATtiny2313 leads.
-> Cut the ATtiny2313 leads to a length that does not protrude from the PCB, solder the surface and protect it with electrical tape or remove the SDCard slot.
+> These are for the old PCB.
 
 ### projects
 
 #### pico_avrisp_wifi
+> not used
 Write to avr microcontroller (attiny2313) using Raspberry Pi Pico W via WiFi
 
 This project access WiFi AP. You should copy `config.sample.ini` to `config.ini`, and change values to your Wifi settings.
@@ -67,13 +68,15 @@ This project access WiFi AP. You should copy `config.sample.ini` to `config.ini`
 > In my environment, avrdude 6.3(PlatformIO embedded version) can not write via WiFi. Please update to **^7.3**. (You can replace files in `tool-avrdude` package)
 
 #### avr
+> not used
 Get the four rotary encoder with push switch values via SPI.
 
 ### Build
 #### Custom PCB
-This project includes the [kicad project](./assets/Plus/kicad) and the gerber filse. These can be used to order PCBs. (I used JLCPCB).
+This project includes the [kicad project](./assets/Plus/kicad).
 
-The included Gerber files are of a size that can be ordered from the JLCPCB for $2. If you are not interested in it, we recommend generating your own Gerber files.
+> [!WARNING]
+> It includes gerber files, but they are for the old PCB.
 
 #### Hardware
 Solder the rotary encoders with reference to the [kicad project](./assets/Plus/kicad), making sure that the Screen display area is correct before soldering the rotary encoders.
@@ -81,11 +84,7 @@ Solder the rotary encoders with reference to the [kicad project](./assets/Plus/k
 #### Software
 1. Setup [PlatformIO IDE](https://platformio.org/platformio-ide)
 2. Clone and open this project
-3. Copy `config.sample.ini` to `config.ini` and edit it
-4. Change environment to `pico_avrisp_wifi`
-5. Build .uf2 file and Upload it
-6. Change environment to `attiny2313`, build and upload.
-7. Change environment to `pico_deckPlus`, build and upload.
+3. Change environment to `pico_deckPlus`, build and upload.
 
 ## Tips
 - [HID Explorer](https://nondebug.github.io/webhid-explorer/) is an easy HID testing tool using WebHID

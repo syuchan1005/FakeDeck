@@ -236,7 +236,9 @@ Input::Encoder::Event::EventDataHolder previous_encoder_event_data_holder = Inpu
 void maybe_send_encoder_event()
 {
     Input::Encoder::Event::EventDataHolder eventDataHolder = encoder.get_event();
-    if (previous_encoder_event_data_holder.turn != eventDataHolder.turn)
+    // turn is consumed (cleared) each call, so send whenever non-zero rather than
+    // comparing with previous value (which would fire twice: once on turn, once on reset to 0).
+    if (eventDataHolder.turn != 0)
     {
         Input::Encoder::Event::Event event = Input::Encoder::Event::Event(Input::Encoder::Event::EventType::TURN, eventDataHolder.turn);
         queue_add_blocking(&encoder_event_queue, &event);

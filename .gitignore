@@ -13,7 +13,7 @@ config.ini
 
 # Kicad
 **/kicad/*
-!**/kicad/gerber
+!**/kicad/gerber_old
 !**/kicad/*.kicad_pcb
 !**/kicad/*.kicad_pro
 !**/kicad/*.kicad_sch
